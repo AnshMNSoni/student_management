@@ -35,12 +35,24 @@ class StudentFeesWizard(models.TransientModel):
 
     def action_pay_fees(self):
         self.ensure_one()
-        # Create student.fees record
-        fee = self.env['student.fees'].create({
-            'student_id': self.student_id.id,
-            'description': self.description,
-            'amount': self.amount,
-        })
+        # Find if there is an existing draft fee record for this student
+        fee = self.env['student.fees'].search([
+            ('student_id', '=', self.student_id.id),
+            ('state', '=', 'draft')
+        ], limit=1)
+        
+        if fee:
+            fee.write({
+                'description': self.description,
+                'amount': self.amount,
+            })
+        else:
+            # Create student.fees record if none exists
+            fee = self.env['student.fees'].create({
+                'student_id': self.student_id.id,
+                'description': self.description,
+                'amount': self.amount,
+            })
         # Pay fees (creates quotation, sale order, invoice, payment)
         fee.action_pay()
 
