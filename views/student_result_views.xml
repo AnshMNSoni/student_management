@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- List View -->
+    <record id="view_student_result_list" model="ir.ui.view">
+        <field name="name">student.result.list</field>
+        <field name="model">student.result</field>
+        <field name="arch" type="xml">
+            <list string="Student Results">
+                <field name="sequence" readonly="1"/>
+                <field name="student_id"/>
+                <field name="standard_id"/>
+                <field name="overall_percentage" string="Overall Result (%)"/>
+                <field name="overall_grade"/>
+                <field name="result_date"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_student_result_form" model="ir.ui.view">
+        <field name="name">student.result.form</field>
+        <field name="model">student.result</field>
+        <field name="arch" type="xml">
+            <form string="Student Result">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="sequence" readonly="1"/>
+                            <field name="student_id"/>
+                            <field name="standard_id"/>
+                            <field name="standard" invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="overall_percentage" string="Overall Result (%)" readonly="1"/>
+                            <field name="overall_grade" readonly="1"/>
+                            <field name="result_date"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Subject Results">
+                            <field name="result_line_ids">
+                                <list editable="bottom">
+                                    <!-- <field name="allowed_subject_ids" invisible="1"/> -->
+                                    <field name="subject_id" domain="[('id', 'in', allowed_subject_ids)]" options="{'no_create': True}"/>
+                                    <field name="marks"/>
+                                    <field name="grade" readonly="1"/>
+                                </list>
+                                <form>
+                                    <group>
+                                        <field name="allowed_subject_ids" invisible="1"/>
+                                        <field name="subject_id" domain="[('id', 'in', allowed_subject_ids)]" options="{'no_create': True}"/>
+                                        <field name="marks"/>
+                                        <field name="grade" readonly="1"/>
+                                    </group>
+                                </form>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_student_result" model="ir.actions.act_window">
+        <field name="name">Results</field>
+        <field name="res_model">student.result</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="oe_view_nocontent_create">
+                Create student results records.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu -->
+    <menuitem id="menu_student_result"
+        name="Results"
+        parent="menu_student_root"
+        action="action_student_result"
+        sequence="3"/>
+
+</odoo>

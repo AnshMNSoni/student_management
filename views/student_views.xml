@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- List View -->
+    <record id="view_student_list" model="ir.ui.view">
+        <field name="name">student.management.list</field>
+        <field name="model">student.management</field>
+        <field name="arch" type="xml">
+            <list string="Students" default_order="name asc">
+                <field name="name" />
+                <field name="roll_number" />
+                <field name="age" />
+                <field name="email" widget="email" />
+                <field name="admission_date" />
+                <field name="status" widget="badge" />
+                <field name="fee_status" widget="badge" decoration-success="fee_status == 'paid'" decoration-warning="fee_status == 'unpaid'" decoration-info="fee_status == 'no_fees'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_student_form" model="ir.ui.view">
+        <field name="name">student.management.form</field>
+        <field name="model">student.management</field>
+        <field name="arch" type="xml">
+            <form string="Student">
+                <header>
+                    <button name="action_open_status_wizard"
+                        string="Change Status"
+                        type="object"
+                        class="btn-primary"
+                        groups="student_management.group_teacher" />
+                    <button name="action_open_fees_wizard"
+                        string="Fees"
+                        type="object"
+                        class="btn-primary"
+                        groups="student_management.group_admin" />
+                </header>
+                
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_quotations"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-pencil-square-o"
+                                groups="student_management.group_admin">
+                            <field name="quotation_count" widget="statinfo" string="Quotations"/>
+                        </button>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="name" />
+                            <field name="roll_number" />
+                            <field name="age" />
+                        </group>
+
+                        <group>
+                            <field name="email" widget="email" />
+                            <field name="standard_id" required="1" string="Standard/Class"/>
+                            <field name="standard" invisible="1"/>
+                            <field name="subject_ids" widget="many2many_tags" domain="[('standard_name', '=', standard)]" options="{'no_create': True}"/>
+                            <field name="admission_date" />
+                            <field name="status" widget="badge" />
+                            <field name="fee_status" widget="badge" decoration-success="fee_status == 'paid'" decoration-warning="fee_status == 'unpaid'" decoration-info="fee_status == 'no_fees'"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Results">
+                            <field name="result_ids">
+                                <list>
+                                    <!-- <field name="student_id" invisible="1"/> -->
+                                    <field name="sequence" readonly="1"/>
+                                    <field name="result_date"/>
+                                    <field name="overall_percentage" string="Overall Result (%)"/>
+                                    <field name="overall_grade"/>
+                                </list>
+                                <form>
+                                    <sheet>
+                                        <field name="student_id" invisible="1"/>
+                                        <group>
+                                            <group>
+                                                <field name="result_date"/>
+                                            </group>
+                                            <group>
+                                                <field name="overall_percentage" string="Overall Result (%)" readonly="1"/>
+                                                <field name="overall_grade" readonly="1"/>
+                                            </group>
+                                        </group>
+                                        <notebook>
+                                            <page string="Subject Results">
+                                                <field name="result_line_ids">
+                                                    <list editable="bottom">
+                                                        <!-- <field name="allowed_subject_ids" invisible="1"/> -->
+                                                        <field name="subject_id" domain="[('id', 'in', allowed_subject_ids)]" options="{'no_create': True}"/>
+                                                        <field name="marks"/>
+                                                        <field name="grade" readonly="1"/>
+                                                    </list>
+                                                    <form>
+                                                        <group>
+                                                            <!-- <field name="allowed_subject_ids" invisible="1"/> -->
+                                                            <field name="subject_id" domain="[('id', 'in', allowed_subject_ids)]" options="{'no_create': True}"/>
+                                                            <field name="marks"/>
+                                                            <field name="grade" readonly="1"/>
+                                                        </group>
+                                                    </form>
+                                                </field>
+                                            </page>
+                                        </notebook>
+                                    </sheet>
+                                </form>
+                            </field>
+                        </page>
+                        <page string="Fees">
+                            <field name="fee_ids">
+                                <list>
+                                    <field name="description"/>
+                                    <field name="amount"/>
+                                    <field name="state" widget="badge" decoration-success="state == 'paid'" decoration-info="state == 'draft'"/>
+                                    <field name="sale_order_id"/>
+                                    <field name="invoice_id"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_student_search" model="ir.ui.view">
+        <field name="name">student.management.search</field>
+        <field name="model">student.management</field>
+        <field name="arch" type="xml">
+            <search string="Search Students">
+
+                <!-- Search fields -->
+                <field name="name" />
+                <field name="roll_number" />
+                <field name="email" />
+
+                <!-- Filters -->
+                <filter
+                    name="filter_active"
+                    string="Active"
+                    domain="[('status', '=', 'active')]"
+                />
+
+                <filter
+                    name="filter_inactive"
+                    string="Inactive"
+                    domain="[('status', '=', 'inactive')]"
+                />
+
+                <filter
+                    name="filter_draft"
+                    string="Draft"
+                    domain="[('status', '=', 'draft')]"
+                />
+
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_student_management" model="ir.actions.act_window">
+        <field name="name">Students</field>
+        <field name="res_model">student.management</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_student_search" />
+    </record>
+
+    <!-- Root Menu -->
+    <menuitem
+        id="menu_student_root"
+        name="Student Management"
+        sequence="10"
+    />
+
+    <!-- Child Menu -->
+    <menuitem
+        id="menu_student"
+        name="Students"
+        parent="menu_student_root"
+        action="action_student_management"
+        sequence="10"
+    />
+
+</odoo>

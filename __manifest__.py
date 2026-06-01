@@ -1,0 +1,23 @@
+{
+    'name': 'Student Management',
+    'version': '1.0',
+    'summary': 'Manage student records',
+    'description': 'Custom module for managing students in Odoo',
+    'author': 'Ansh Soni',
+    'category': 'Education',
+    'depends': ['base', 'account', 'sale', 'website'],
+    'data': [
+        'security/student_security.xml',
+        'security/ir.model.access.csv',
+        'views/student_standard_views.xml',
+        'views/student_subject_views.xml',
+        'views/student_views.xml',
+        'views/student_result_views.xml',
+        'views/student_status_wizard_views.xml', 
+        'views/student_fees_views.xml',
+        'views/student_fees_wizard_views.xml',
+        'views/student_portal_templates.xml',
+    ],
+    'installable': True,
+    'application': True,
+}
