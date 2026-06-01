@@ -47,6 +47,12 @@ class StudentFeesWizard(models.TransientModel):
         # Update wizard state (mostly for UI consistency)
         self.write({'state': 'paid'})
 
+        # Log the action in the student's chatter
+        self.student_id.message_post(
+            body=f"Fees Paid: {self.description} - Amount: {self.amount} - Date: {fields.Date.context_today(self)}",
+            subtype_xmlid="mail.mt_note"
+        )
+
         # Reload the student page to reflect new status and records
         return {
             'type': 'ir.actions.client',

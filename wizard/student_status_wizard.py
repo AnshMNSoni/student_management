@@ -28,8 +28,15 @@ class StudentStatusWizard(models.TransientModel):
                 "Student already has this status."
             )
 
+        old_status = self.student_id.status
         self.student_id.write({
             'status': self.new_status
         })
+
+        # Post custom status update in chatter
+        body = f"Status changed: {old_status.capitalize()} to {self.new_status.capitalize()} - Date: {fields.Date.context_today(self)}"
+        if self.reason:
+            body += f" - Reason: {self.reason}"
+        self.student_id.message_post(body=body, subtype_xmlid="mail.mt_note")
 
         return {'type': 'ir.actions.act_window_close'}

@@ -5,7 +5,7 @@
     'description': 'Custom module for managing students in Odoo',
     'author': 'Ansh Soni',
     'category': 'Education',
-    'depends': ['base', 'account', 'sale', 'website'],
+    'depends': ['base', 'account', 'sale', 'website', 'mail'],
     'data': [
         'security/student_security.xml',
         'security/ir.model.access.csv',

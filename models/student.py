@@ -6,6 +6,7 @@ import re
 class Student(models.Model):
     _name = 'student.management'
     _description = 'Student Management'
+    _inherit = ['mail.thread']
     _inherits = {'res.partner': 'partner_id'}
     _sql_constraints = [
         (
@@ -64,7 +65,7 @@ class Student(models.Model):
         ('no_fees', 'No Fees'),
         ('unpaid', 'Unpaid'),
         ('paid', 'Paid'),
-    ], string='Fee Status', compute='_compute_fee_status', store=True)
+    ], string='Fee Status', compute='_compute_fee_status', store=True, tracking=True)
     quotation_count = fields.Integer(
         string='Quotations Count',
         compute='_compute_quotation_count'
@@ -87,7 +88,8 @@ class Student(models.Model):
             ('inactive', 'Inactive')
         ],
         string='Status',
-        default='draft'
+        default='draft',
+        tracking=True
     )
     
     @api.constrains('age')
