@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="student_registration_form_temp" name="Student Registration Form">
+        <t t-call="website.layout">
+            <div id="wrap" class="oe_structure oe_empty">
+                <section class="py-5" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 100vh; font-family: 'Inter', sans-serif;">
+                    <div class="container">
+                        <div class="row justify-content-center">
+                            <div class="col-lg-8 col-md-10">
+                                <div class="card border-0 shadow-lg" style="border-radius: 16px; overflow: hidden; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);">
+                                    <div class="p-4 text-white text-center" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);">
+                                        <h2 class="mb-1" style="font-family: 'Outfit', sans-serif; font-weight: 700;">Student Registration</h2>
+                                        <p class="mb-0 opacity-75">Please enter your information below to register</p>
+                                    </div>
+                                    <div class="card-body p-5">
+                                        <t t-if="error">
+                                            <div class="alert alert-danger rounded-3" role="alert">
+                                                <t t-out="error"/>
+                                            </div>
+                                        </t>
+                                        <form action="/student/register/submit" method="post" class="needs-validation">
+                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                            
+                                            <div class="row g-4">
+                                                <!-- Name -->
+                                                <div class="col-md-6">
+                                                    <label for="name" class="form-label fw-bold text-secondary">Full Name *</label>
+                                                    <input type="text" class="form-control form-control-lg rounded-3" id="name" name="name" required="required" placeholder="e.g. Rajeev Gupta" t-att-value="post.get('name') if post else ''"/>
+                                                </div>
+                                                <!-- Roll Number -->
+                                                <div class="col-md-6">
+                                                    <label for="roll_number" class="form-label fw-bold text-secondary">Roll Number *</label>
+                                                    <input type="text" class="form-control form-control-lg rounded-3" id="roll_number" name="roll_number" required="required" placeholder="e.g. 23BCP985" t-att-value="post.get('roll_number') if post else ''"/>
+                                                </div>
+                                                <!-- Email -->
+                                                <div class="col-md-6">
+                                                    <label for="email" class="form-label fw-bold text-secondary">Email Address *</label>
+                                                    <input type="email" class="form-control form-control-lg rounded-3" id="email" name="email" required="required" placeholder="e.g. rajeev@test.com" t-att-value="post.get('email') if post else ''"/>
+                                                </div>
+                                                <!-- Age -->
+                                                <div class="col-md-6">
+                                                    <label for="age" class="form-label fw-bold text-secondary">Age</label>
+                                                    <input type="number" class="form-control form-control-lg rounded-3" id="age" name="age" min="1" placeholder="e.g. 21" t-att-value="post.get('age') if post else ''"/>
+                                                </div>
+                                                <!-- Standard/Class Selection -->
+                                                <div class="col-md-6">
+                                                    <label for="standard_id" class="form-label fw-bold text-secondary">Standard/Class *</label>
+                                                    <select class="form-select form-select-lg rounded-3" id="standard_id" name="standard_id" required="required">
+                                                        <option value="" disabled="disabled" selected="selected">Choose Class...</option>
+                                                        <t t-foreach="standards" t-as="std">
+                                                            <option t-att-value="std.id" t-att-selected="post and int(post.get('standard_id') or 0) == std.id"><t t-out="std.name"/></option>
+                                                        </t>
+                                                    </select>
+                                                </div>
+                                                <!-- Admission Date -->
+                                                <div class="col-md-6">
+                                                    <label for="admission_date" class="form-label fw-bold text-secondary">Admission Date</label>
+                                                    <input type="date" class="form-control form-control-lg rounded-3" id="admission_date" name="admission_date" t-att-value="post.get('admission_date') if post else ''"/>
+                                                </div>
+                                                
+                                                <!-- Fees Display (Computed from Standard Selection) -->
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold text-secondary">Class Fees (Auto-filled)</label>
+                                                    <div class="input-group input-group-lg">
+                                                        <span class="input-group-text bg-light border-end-0"><i class="fa fa-usd text-muted"/></span>
+                                                        <input type="text" class="form-control bg-light border-start-0" id="fees_display" readonly="readonly" placeholder="0.00"/>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Dynamic Subjects Section -->
+                                                <div class="col-12">
+                                                    <label class="form-label fw-bold text-secondary mb-2">Available Subjects (Auto-loaded)</label>
+                                                    <div id="subjects_container" class="p-3 border rounded-3 bg-light d-flex flex-wrap gap-3" style="min-height: 50px;">
+                                                        <span class="text-muted italic">Please select a Standard/Class first to load subjects.</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mt-5 text-center">
+                                                <button type="submit" class="btn btn-lg px-5 py-3 text-white fw-bold border-0 shadow" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border-radius: 12px; transition: transform 0.2s;">
+                                                    Submit Registration
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+            
+            <script type="text/javascript">
+                // <![CDATA[
+                document.addEventListener('DOMContentLoaded', function() {
+                    const standardSelect = document.getElementById('standard_id');
+                    const feesDisplay = document.getElementById('fees_display');
+                    const subjectsContainer = document.getElementById('subjects_container');
+                    
+                    function loadStandardDetails(standardId) {
+                        if (!standardId) return;
+                        
+                        fetch('/student/get_standard_details', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                jsonrpc: "2.0",
+                                method: "call",
+                                params: {
+                                    standard_id: standardId
+                                }
+                             })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.result) {
+                                feesDisplay.value = parseFloat(data.result.fees).toFixed(2);
+                                
+                                subjectsContainer.innerHTML = '';
+                                if (data.result.subjects.length > 0) {
+                                    data.result.subjects.forEach(subject => {
+                                        const div = document.createElement('div');
+                                        div.className = 'form-check form-check-inline bg-white px-3 py-2 border rounded-3 shadow-sm d-flex align-items-center gap-2';
+                                        div.innerHTML = `
+                                            <input class="form-check-input" type="checkbox" name="subject_ids" id="subj_${subject.id}" value="${subject.id}" checked="checked">
+                                            <label class="form-check-label fw-bold text-dark mb-0" for="subj_${subject.id}">${subject.name}</label>
+                                        `;
+                                        subjectsContainer.appendChild(div);
+                                    });
+                                } else {
+                                    subjectsContainer.innerHTML = '<span class="text-muted">No subjects found for this standard.</span>';
+                                }
+                            }
+                        });
+                    }
+                    
+                    standardSelect.addEventListener('change', function() {
+                        loadStandardDetails(this.value);
+                    });
+                    
+                    if (standardSelect.value) {
+                        loadStandardDetails(standardSelect.value);
+                    }
+                });
+                // ]]>
+            </script>
+        </t>
+    </template>
+
+    <template id="student_registration_success" name="Registration Successful">
+        <t t-call="website.layout">
+            <div id="wrap" class="oe_structure oe_empty">
+                <section class="py-5" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 100vh; font-family: 'Inter', sans-serif;">
+                    <div class="container">
+                        <div class="row justify-content-center">
+                            <div class="col-lg-6 col-md-8 text-center">
+                                <div class="card border-0 shadow-lg p-5" style="border-radius: 16px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);">
+                                    <div class="mb-4">
+                                        <i class="fa fa-check-circle text-success" style="font-size: 80px;"/>
+                                    </div>
+                                    <h2 class="mb-3" style="font-family: 'Outfit', sans-serif; font-weight: 700; color: #1e1b4b;">Registration Successful!</h2>
+                                    <p class="text-muted mb-4" style="font-size: 16px;">
+                                        Thank you <strong><t t-out="student.name"/></strong>. Your registration has been successfully recorded. A confirmation email has been sent to <strong><t t-out="student.email"/></strong>.
+                                    </p>
+                                    <div class="bg-light p-4 rounded-3 text-start mb-4">
+                                        <p class="mb-2"><strong>Roll Number:</strong> <t t-out="student.roll_number"/></p>
+                                        <p class="mb-2"><strong>Standard/Class:</strong> <t t-out="student.standard_id.name"/></p>
+                                        <p class="mb-0"><strong>Admission Date:</strong> <t t-out="student.admission_date"/></p>
+                                    </div>
+                                    <div>
+                                        <a href="/my" class="btn btn-lg text-white px-5 py-3 fw-bold border-0 shadow" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border-radius: 12px;">
+                                            Go to Portal Home
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </t>
+    </template>
+
+    <template id="navbar_nav_student" inherit_id="website.navbar_nav" name="Student Navbar Nav Inherit">
+        <xpath expr="//ul" position="inside">
+            <li t-if="not request.env.user.has_group('student_management.group_teacher') or request.env.user.has_group('student_management.group_admin')"
+                t-attf-class="nav-item #{'border-top border-bottom' if is_mobile else ''}" role="presentation">
+                <a href="/student/register"
+                   t-attf-class="nav-link #{'p-3 text-wrap' if is_mobile else ''} #{'active' if request.httprequest.path == '/student/register' else ''}"
+                   role="menuitem">
+                    <span>Student Registration</span>
+                </a>
+            </li>
+        </xpath>
+    </template>
+</odoo>

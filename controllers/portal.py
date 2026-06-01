@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from odoo import http
+from odoo import http, fields
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager as portal_pager
 from odoo.addons.website.controllers.main import Website
@@ -29,6 +29,89 @@ class Website(Website):
                 return request.render('student_management.portal_student_profile', values)
         return super().index(**kw)
 
+    @http.route('/student/register', type='http', auth='public', website=True)
+    def student_register(self, **kw):
+        user = request.env.user
+        if not user._is_public():
+            if user.has_group('student_management.group_teacher') and not user.has_group('student_management.group_admin'):
+                return request.render('website.403')
+
+        standards = request.env['student.standard'].sudo().search([])
+        return request.render('student_management.student_registration_form_temp', {
+            'standards': standards,
+        })
+
+    @http.route('/student/register/submit', type='http', auth='public', methods=['POST'], website=True, csrf=True)
+    def student_register_submit(self, **post):
+        user = request.env.user
+        if not user._is_public():
+            if user.has_group('student_management.group_teacher') and not user.has_group('student_management.group_admin'):
+                return request.render('website.403')
+
+        name = post.get('name')
+        roll_number = post.get('roll_number')
+        age = post.get('age')
+        email = post.get('email')
+        standard_id = post.get('standard_id')
+        admission_date = post.get('admission_date')
+        subject_ids = request.httprequest.form.getlist('subject_ids')
+
+        if not name or not roll_number or not email or not standard_id:
+            standards = request.env['student.standard'].sudo().search([])
+            return request.render('student_management.student_registration_form_temp', {
+                'standards': standards,
+                'error': 'Please fill all required fields.',
+                'post': post
+            })
+
+        existing_student = request.env['student.management'].sudo().search([('roll_number', '=', roll_number)], limit=1)
+        if existing_student:
+            standards = request.env['student.standard'].sudo().search([])
+            return request.render('student_management.student_registration_form_temp', {
+                'standards': standards,
+                'error': 'Roll Number must be unique. A student with this roll number is already registered.',
+                'post': post
+            })
+
+        try:
+            student_vals = {
+                'name': name,
+                'roll_number': roll_number,
+                'age': int(age) if age else 0,
+                'email': email,
+                'standard_id': int(standard_id),
+                'admission_date': admission_date or fields.Date.today(),
+                'status': 'draft',
+            }
+            if subject_ids:
+                student_vals['subject_ids'] = [(6, 0, [int(sid) for sid in subject_ids])]
+
+            student = request.env['student.management'].sudo().create(student_vals)
+            
+            student.action_send_registration_email()
+
+            return request.render('student_management.student_registration_success', {
+                'student': student
+            })
+        except Exception as e:
+            standards = request.env['student.standard'].sudo().search([])
+            return request.render('student_management.student_registration_form_temp', {
+                'standards': standards,
+                'error': str(e),
+                'post': post
+            })
+
+    @http.route('/student/get_standard_details', type='json', auth='public')
+    def get_standard_details(self, standard_id):
+        standard = request.env['student.standard'].sudo().browse(int(standard_id))
+        if not standard.exists():
+            return {'subjects': [], 'fees': 0}
+        subjects = request.env['student.subject'].sudo().search([('standard_name', '=', standard.standard)])
+        return {
+            'fees': standard.fees_amount or 0.0,
+            'subjects': [{'id': s.id, 'name': s.name} for s in subjects]
+        }
+
 
 class CustomerPortal(CustomerPortal):
 
@@ -36,16 +119,18 @@ class CustomerPortal(CustomerPortal):
         values = super()._prepare_home_portal_values(counters)
         partner = request.env.user.partner_id
         student = request.env['student.management'].sudo().search([('partner_id', '=', partner.id)], limit=1)
+        
+        # Only inject the non-counter QWeb rendering variable if this is not a counters JSON-RPC call
+        if request.httprequest.path != '/my/counters':
+            values['is_student'] = bool(student)
+            
         if student:
-            values['is_student'] = True
             if 'student_count' in counters:
                 values['student_count'] = 1
             if 'result_count' in counters:
                 values['result_count'] = request.env['student.result'].search_count([('student_id', '=', student.id)])
             if 'fees_count' in counters:
                 values['fees_count'] = request.env['student.fees'].search_count([('student_id', '=', student.id)])
-        else:
-            values['is_student'] = False
         return values
 
     @http.route(['/my', '/my/home'], type='http', auth="user", website=True)

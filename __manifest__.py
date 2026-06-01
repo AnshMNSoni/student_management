@@ -9,6 +9,7 @@
     'data': [
         'security/student_security.xml',
         'security/ir.model.access.csv',
+        'data/mail_template_data.xml',
         'views/student_standard_views.xml',
         'views/student_subject_views.xml',
         'views/student_views.xml',
@@ -17,6 +18,7 @@
         'views/student_fees_views.xml',
         'views/student_fees_wizard_views.xml',
         'views/student_portal_templates.xml',
+        'views/student_registration_templates.xml',
     ],
     'installable': True,
     'application': True,

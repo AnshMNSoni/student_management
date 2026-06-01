@@ -42,6 +42,15 @@
                 <t t-set="placeholder_count" t-value="'fees_count'"/>
                 <t t-set="config_card" t-value="True"/>
             </t>
+            <t t-if="not is_student and not request.env.user.has_group('student_management.group_teacher')">
+                <t t-call="portal.portal_docs_entry">
+                    <t t-set="title">Student Registration</t>
+                    <t t-set="url" t-value="'/student/register'"/>
+                    <t t-set="text">Register your student profile details</t>
+                    <t t-set="icon" t-value="'/portal/static/src/img/portal-connection.svg'"/>
+                    <t t-set="config_card" t-value="True"/>
+                </t>
+            </t>
         </xpath>
     </template>
 

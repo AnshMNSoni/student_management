@@ -152,6 +152,12 @@ class Student(models.Model):
                 self.env.cr.execute("UPDATE res_partner SET active = False WHERE id = %s", (old_partner.id,))
                 self.env.registry.clear_cache()
 
+    def action_send_registration_email(self):
+        self.ensure_one()
+        template = self.env.ref('student_management.email_template_student_registration', raise_if_not_found=False)
+        if template:
+            template.sudo().send_mail(self.id, force_send=True)
+
 
     def action_open_status_wizard(self):
         return {
