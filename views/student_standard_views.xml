@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- List View -->
+    <record id="view_student_standard_list" model="ir.ui.view">
+        <field name="name">student.standard.list</field>
+        <field name="model">student.standard</field>
+        <field name="arch" type="xml">
+            <list string="Standards">
+                <field name="name"/>
+                <field name="standard"/>
+                <field name="division"/>
+                <field name="room_number"/>
+                <field name="strength"/>
+                <field name="fees_amount"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_student_standard_form" model="ir.ui.view">
+        <field name="name">student.standard.form</field>
+        <field name="model">student.standard</field>
+        <field name="arch" type="xml">
+            <form string="Standard">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="standard" required="1"/>
+                            <field name="division" required="1"/>
+                            <field name="name" readonly="1" force_save="1"/>
+                        </group>
+                        <group>
+                            <field name="room_number"/>
+                            <field name="strength"/>
+                            <field name="fees_amount"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Students">
+                            <field name="student_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="roll_number"/>
+                                    <field name="age"/>
+                                    <field name="status"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Subjects">
+                            <field name="subject_ids">
+                                <list editable="bottom">
+                                    <field name="name"/>
+                                </list>
+                                <form string="Subject">
+                                    <group>
+                                        <field name="name" string="Subject Name"/>
+                                    </group>
+                                </form>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_student_standard" model="ir.actions.act_window">
+        <field name="name">Standards</field>
+        <field name="res_model">student.standard</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Menu Item -->
+    <menuitem
+        id="menu_student_standard"
+        name="Standards"
+        parent="menu_student_root"
+        action="action_student_standard"
+        sequence="4"
+    />
+</odoo>

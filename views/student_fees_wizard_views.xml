@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Form View -->
+    <record id="view_student_fees_wizard_form" model="ir.ui.view">
+        <field name="name">student.fees.wizard.form</field>
+        <field name="model">student.fees.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Create Fees">
+                <header>
+                    <button name="action_pay_fees"
+                            string="Pay Fees"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state == 'paid'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,paid"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="student_id" invisible="1"/>
+                            <field name="amount"/>
+                        </group>
+                        <group>
+                            <field name="description"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_student_fees_wizard" model="ir.actions.act_window">
+        <field name="name">Create Fees</field>
+        <field name="res_model">student.fees.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>
