@@ -236,3 +236,26 @@ class CustomerPortal(CustomerPortal):
             'pager': pager,
         })
         return request.render('student_management.portal_student_fees', values)
+
+    @http.route('/my/student/fees/pay/<int:fee_id>', type='http', auth='user', website=True)
+    def portal_pay_fee(self, fee_id, **kw):
+        partner = request.env.user.partner_id
+        student = request.env['student.management'].sudo().search([('partner_id', '=', partner.id)], limit=1)
+        if not student:
+            return request.redirect('/my')
+
+        fee = request.env['student.fees'].sudo().search([
+            ('id', '=', fee_id),
+            ('student_id', '=', student.id)
+        ], limit=1)
+        
+        if not fee:
+            return request.redirect('/my/student/fees')
+
+        if not fee.sale_order_id and fee.state == 'draft':
+            fee.action_pay()
+
+        if fee.sale_order_id:
+            return request.redirect(f'/my/orders/{fee.sale_order_id.id}')
+
+        return request.redirect('/my/student/fees')
