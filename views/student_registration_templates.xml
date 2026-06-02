@@ -57,6 +57,16 @@
                                                     <label for="admission_date" class="form-label fw-bold text-secondary">Admission Date</label>
                                                     <input type="date" class="form-control form-control-lg rounded-3" id="admission_date" name="admission_date" t-att-value="post.get('admission_date') if post else ''"/>
                                                 </div>
+                                                <!-- Password -->
+                                                <div class="col-md-6">
+                                                    <label for="password" class="form-label fw-bold text-secondary">Password *</label>
+                                                    <input type="password" class="form-control form-control-lg rounded-3" id="password" name="password" required="required" placeholder="••••••••"/>
+                                                </div>
+                                                <!-- Confirm Password -->
+                                                <div class="col-md-6">
+                                                    <label for="confirm_password" class="form-label fw-bold text-secondary">Confirm Password *</label>
+                                                    <input type="password" class="form-control form-control-lg rounded-3" id="confirm_password" name="confirm_password" required="required" placeholder="••••••••"/>
+                                                </div>
                                                 
                                                 <!-- Fees Display (Computed from Standard Selection) -->
                                                 <div class="col-md-6">
