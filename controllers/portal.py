@@ -54,13 +54,32 @@ class Website(Website):
         email = post.get('email')
         standard_id = post.get('standard_id')
         admission_date = post.get('admission_date')
+        password = post.get('password')
+        confirm_password = post.get('confirm_password')
         subject_ids = request.httprequest.form.getlist('subject_ids')
 
-        if not name or not roll_number or not email or not standard_id:
+        if not name or not roll_number or not email or not standard_id or not password or not confirm_password:
             standards = request.env['student.standard'].sudo().search([])
             return request.render('student_management.student_registration_form_temp', {
                 'standards': standards,
                 'error': 'Please fill all required fields.',
+                'post': post
+            })
+
+        if password != confirm_password:
+            standards = request.env['student.standard'].sudo().search([])
+            return request.render('student_management.student_registration_form_temp', {
+                'standards': standards,
+                'error': 'Passwords do not match.',
+                'post': post
+            })
+
+        existing_user = request.env['res.users'].sudo().search([('login', '=', email)], limit=1)
+        if existing_user:
+            standards = request.env['student.standard'].sudo().search([])
+            return request.render('student_management.student_registration_form_temp', {
+                'standards': standards,
+                'error': 'A user with this email is already registered.',
                 'post': post
             })
 
@@ -87,6 +106,17 @@ class Website(Website):
                 student_vals['subject_ids'] = [(6, 0, [int(sid) for sid in subject_ids])]
 
             student = request.env['student.management'].sudo().create(student_vals)
+            
+            # Create corresponding res.users record
+            user_vals = {
+                'name': name,
+                'login': email,
+                'email': email,
+                'partner_id': student.partner_id.id,
+                'password': password,
+                'group_ids': [(6, 0, [request.env.ref('student_management.group_student').id])]
+            }
+            request.env['res.users'].sudo().create(user_vals)
             
             student.action_send_registration_email()
 
