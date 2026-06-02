@@ -307,6 +307,11 @@
                                                             <i class="fa fa-file-text-o me-1"/>View Order: <t t-esc="fee.sale_order_id.name"/>
                                                         </a>
                                                     </t>
+                                                    <t t-elif="fee.state == 'draft'">
+                                                        <a t-attf-href="/my/student/fees/pay/#{fee.id}" class="btn btn-success btn-sm rounded-pill shadow-sm">
+                                                            <i class="fa fa-credit-card me-1"/>Pay Now
+                                                        </a>
+                                                    </t>
                                                     <t t-else="">
                                                         <span class="text-muted">-</span>
                                                     </t>

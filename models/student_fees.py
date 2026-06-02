@@ -24,7 +24,16 @@ class StudentFees(models.Model):
     state = fields.Selection([
         ('draft', 'Draft'),
         ('paid', 'Paid'),
-    ], string='Status', default='draft', readonly=True)
+    ], string='Status', compute='_compute_state', store=True, readonly=True)
+
+    @api.depends('sale_order_id.state', 'invoice_id.payment_state')
+    def _compute_state(self):
+        for record in self:
+            if (record.sale_order_id and record.sale_order_id.state in ['sale', 'done']) or \
+               (record.invoice_id and record.invoice_id.payment_state in ['paid', 'in_payment']):
+                record.state = 'paid'
+            else:
+                record.state = 'draft'
 
     @api.model
     def default_get(self, fields_list):
@@ -70,7 +79,7 @@ class StudentFees(models.Model):
 
     def action_pay(self):
         for record in self:
-            if record.state == 'paid':
+            if record.sale_order_id or record.state == 'paid':
                 continue
 
             partner = record.student_id.partner_id
@@ -98,8 +107,7 @@ class StudentFees(models.Model):
                 ]
             })
 
-            # 2. Link sale order and mark fees as paid
+            # 2. Link sale order
             record.write({
                 'sale_order_id': sale_order.id,
-                'state': 'paid'
             })
