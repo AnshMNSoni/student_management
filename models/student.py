@@ -65,7 +65,7 @@ class Student(models.Model):
         ('no_fees', 'No Fees'),
         ('unpaid', 'Unpaid'),
         ('paid', 'Paid'),
-    ], string='Fee Status', compute='_compute_fee_status', store=True, tracking=True)
+    ], string='Fee Status', compute='_compute_fee_status', store=True, readonly=False, tracking=True)
     quotation_count = fields.Integer(
         string='Quotations Count',
         compute='_compute_quotation_count'
