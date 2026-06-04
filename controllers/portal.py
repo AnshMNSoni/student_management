@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from odoo import http, fields
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager as portal_pager
@@ -12,7 +11,6 @@ class Website(Website):
             partner = request.env.user.partner_id
             student = request.env['student.management'].sudo().search([('partner_id', '=', partner.id)], limit=1)
             if student:
-                # Prepare layout values manually
                 sales_user_sudo = request.env['res.users']
                 if partner.user_id and not partner.user_id._is_public():
                     sales_user_sudo = partner.user_id

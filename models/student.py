@@ -203,3 +203,9 @@ class Student(models.Model):
             'domain': [('partner_id', '=', self.partner_id.id)],
             'context': {'default_partner_id': self.partner_id.id},
         }
+
+    def unlink(self):
+        partners = self.mapped('partner_id')
+        res = super().unlink()
+        partners.unlink()
+        return res

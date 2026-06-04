@@ -2,14 +2,12 @@ import os
 import openpyxl
 
 def export_students(env):
-    # Locate the Excel file destination relative to the script directory, with fallback for stdin pipes
     try:
         script_dir = os.path.dirname(os.path.abspath(__file__))
         excel_path = os.path.abspath(os.path.join(script_dir, '..', 'data', 'data.xlsx'))
     except NameError:
         excel_path = os.path.abspath(os.path.join(os.getcwd(), 'custom_addons', 'student_management', 'data', 'data.xlsx'))
 
-    # Ensure the parent directory exists
     os.makedirs(os.path.dirname(excel_path), exist_ok=True)
 
     print("Locating student group and users...")
@@ -25,16 +23,13 @@ def export_students(env):
 
     print(f"Found {len(users)} users in the Student group. Starting export...")
 
-    # Create new workbook and sheet
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Students"
 
-    # Define headers
     headers = ['Name', 'Login/Email', 'Roll Number', 'Age', 'Admission Date', 'Status', 'Fee Status']
     ws.append(headers)
 
-    # Selection field mappings
     status_mapping = {
         'draft': 'Draft',
         'active': 'Active',
@@ -50,10 +45,8 @@ def export_students(env):
     export_count = 0
 
     for user in users:
-        # Search for the student record linked to the user's partner
         student = student_model.search([('partner_id', '=', user.partner_id.id)], limit=1)
 
-        # Gather user and student info
         name = user.name or ""
         login = user.login or ""
         
@@ -70,18 +63,15 @@ def export_students(env):
             status = ""
             fee_status = ""
 
-        # Write to excel sheet
         ws.append([name, login, roll_number, age, admission_date, status, fee_status])
         export_count += 1
 
-    # Save the file
     try:
         wb.save(excel_path)
         print(f"\nExport Finished: {export_count} records exported successfully to {excel_path}.")
     except Exception as e:
         print(f"Error saving workbook: {e}")
 
-# Execute when run within Odoo Shell
 if 'env' in globals():
     export_students(env)
 else:
