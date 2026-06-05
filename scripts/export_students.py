@@ -71,9 +71,3 @@ def export_students(env):
         print(f"\nExport Finished: {export_count} records exported successfully to {excel_path}.")
     except Exception as e:
         print(f"Error saving workbook: {e}")
-
-if 'env' in globals():
-    export_students(env)
-else:
-    print("This script must be run inside Odoo Shell.")
-    print("Usage: python odoo-bin shell -c odoo.conf < path/to/export_students.py")
