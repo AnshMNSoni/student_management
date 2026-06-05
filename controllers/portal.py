@@ -38,7 +38,8 @@ class Website(Website):
             'standards': standards,
         })
 
-    def _validate_student_registration(self, post):
+    @staticmethod
+    def _validate_student_registration(post):
         name = post.get('name')
         roll_number = post.get('roll_number')
         email = post.get('email')
