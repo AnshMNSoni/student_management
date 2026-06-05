@@ -43,9 +43,8 @@ class StudentFees(models.Model):
             student = self.env['student.management'].browse(student_id)
             if 'amount' in fields_list and not res.get('amount'):
                 res['amount'] = student.standard_id.fees_amount or 0.0
-            if 'description' in fields_list and (not res.get('description') or res.get('description') == 'School Fees'):
-                if student.standard_id:
-                    res['description'] = f"School Fees for {student.standard_id.name}"
+            if ('description' in fields_list and (not res.get('description') or res.get('description') == 'School Fees')) and student.standard_id:
+                res['description'] = f"School Fees for {student.standard_id.name}"
         return res
 
     @api.onchange('student_id')

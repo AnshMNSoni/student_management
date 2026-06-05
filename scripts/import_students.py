@@ -2,6 +2,58 @@ import os
 import openpyxl
 from datetime import datetime
 
+def _parse_student_row(row, student_model, user_model):
+    name, roll_number, age, email, admission_date, status, fee_status = row
+
+    if not name or not roll_number or not email:
+        return None, "Missing required fields (Name, Roll Number, or Email)"
+
+    name = str(name).strip()
+    roll_number = str(roll_number).strip()
+    email = str(email).strip()
+
+    existing_student = student_model.search([('roll_number', '=', roll_number)], limit=1)
+    if existing_student:
+        return None, "DUPLICATE_ROLL"
+
+    existing_user = user_model.search([('login', '=', email)], limit=1)
+    if existing_user:
+        return None, "DUPLICATE_EMAIL"
+
+    if isinstance(admission_date, str):
+        try:
+            admission_date = datetime.strptime(admission_date.strip(), '%Y-%m-%d').date()
+        except ValueError:
+            admission_date = datetime.today().date()
+    elif not admission_date:
+        admission_date = datetime.today().date()
+
+    status_val = 'draft'
+    if status:
+        status_lower = str(status).strip().lower()
+        if status_lower in ['draft', 'active', 'inactive']:
+            status_val = status_lower
+
+    fee_status_val = 'no_fees'
+    if fee_status:
+        fee_status_lower = str(fee_status).strip().lower()
+        if fee_status_lower in ['no fees', 'no_fees']:
+            fee_status_val = 'no_fees'
+        elif fee_status_lower == 'unpaid':
+            fee_status_val = 'unpaid'
+        elif fee_status_lower == 'paid':
+            fee_status_val = 'paid'
+
+    return {
+        'name': name,
+        'roll_number': roll_number,
+        'age': int(age) if age else 0,
+        'email': email,
+        'admission_date': admission_date,
+        'status': status_val,
+        'fee_status': fee_status_val,
+    }, None
+
 def import_students(env):
     try:
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -48,67 +100,29 @@ def import_students(env):
         skipped_count = 0
 
         for row_idx, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
-            name, roll_number, age, email, admission_date, status, fee_status = row
-
-            if not name or not roll_number or not email:
-                print(f"Row {row_idx}: Missing required fields (Name, Roll Number, or Email). Skipping.")
+            parsed_vals, error_msg = _parse_student_row(row, student_model, user_model)
+            if error_msg:
+                if error_msg not in ["DUPLICATE_ROLL", "DUPLICATE_EMAIL"]:
+                    print(f"Row {row_idx}: {error_msg}. Skipping.")
                 skipped_count += 1
                 continue
-
-            name = str(name).strip()
-            roll_number = str(roll_number).strip()
-            email = str(email).strip()
-
-            existing_student = student_model.search([('roll_number', '=', roll_number)], limit=1)
-            if existing_student:
-                skipped_count += 1
-                continue
-
-            existing_user = user_model.search([('login', '=', email)], limit=1)
-            if existing_user:
-                skipped_count += 1
-                continue
-
-            if isinstance(admission_date, str):
-                try:
-                    admission_date = datetime.strptime(admission_date.strip(), '%Y-%m-%d').date()
-                except ValueError:
-                    admission_date = datetime.today().date()
-            elif not admission_date:
-                admission_date = datetime.today().date()
-
-            status_val = 'draft'
-            if status:
-                status_lower = str(status).strip().lower()
-                if status_lower in ['draft', 'active', 'inactive']:
-                    status_val = status_lower
-
-            fee_status_val = 'no_fees'
-            if fee_status:
-                fee_status_lower = str(fee_status).strip().lower()
-                if fee_status_lower in ['no fees', 'no_fees']:
-                    fee_status_val = 'no_fees'
-                elif fee_status_lower == 'unpaid':
-                    fee_status_val = 'unpaid'
-                elif fee_status_lower == 'paid':
-                    fee_status_val = 'paid'
 
             try:
                 student = student_model.create({
-                    'name': name,
-                    'roll_number': roll_number,
-                    'age': int(age) if age else 0,
-                    'email': email,
+                    'name': parsed_vals['name'],
+                    'roll_number': parsed_vals['roll_number'],
+                    'age': parsed_vals['age'],
+                    'email': parsed_vals['email'],
                     'standard_id': default_standard.id,
-                    'admission_date': admission_date,
-                    'status': status_val,
-                    'fee_status': fee_status_val,
+                    'admission_date': parsed_vals['admission_date'],
+                    'status': parsed_vals['status'],
+                    'fee_status': parsed_vals['fee_status'],
                 })
 
                 user_vals = {
-                    'name': name,
-                    'login': email,
-                    'email': email,
+                    'name': parsed_vals['name'],
+                    'login': parsed_vals['email'],
+                    'email': parsed_vals['email'],
                     'partner_id': student.partner_id.id,
                     'password': 'password123',
                 }
