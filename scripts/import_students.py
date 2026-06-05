@@ -1,7 +1,6 @@
 import os
 import openpyxl
 from datetime import datetime
-from odoo import SUPERUSER_ID
 
 def import_students(env):
     try:
