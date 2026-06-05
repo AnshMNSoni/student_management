@@ -44,22 +44,22 @@ A custom and comprehensive education management module for Odoo 19 designed to m
 
 ```text
 student_management/
-├── controllers/          # Portal routing and online registration templates
+├── controllers/             # Portal routing and online registration templates
 │   └── portal.py         
-├── data/                 # Email templates, data fixtures, and dummy Excel records
-├── models/               # Core Odoo python models
-│   ├── student.py        # student.management (inherits res.partner)
+├── data/                    # Email templates, data fixtures, and dummy Excel records
+├── models/                  # Core Odoo python models
+│   ├── student.py           # student.management (inherits res.partner)
 │   ├── student_standard.py  # student.standard
 │   ├── student_subject.py   # student.subject
 │   ├── student_result.py    # student.result & student.result.line
 │   ├── student_fees.py      # student.fees (links to sale.order & account.move)
-│   └── res_users.py      # User model modifications/hooks
-├── scripts/              # Shell scripts for batch import/export via Odoo Shell
+│   └── res_users.py         # User model modifications/hooks
+├── scripts/                 # Shell scripts for batch import/export via Odoo Shell
 │   ├── import_students.py
 │   └── export_students.py
-├── security/             # Security groups (Admin, Teacher, Student) and ACL rules
-├── views/                # XML UI Views (lists, forms, search, menus, portal/web pages)
-└── wizard/               # Status modification and fee generation wizards
+├── security/                # Security groups (Admin, Teacher, Student) and ACL rules
+├── views/                   # XML UI Views (lists, forms, search, menus, portal/web pages)
+└── wizard/                  # Status modification and fee generation wizards
 ```
 
 ---
