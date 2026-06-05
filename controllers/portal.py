@@ -30,9 +30,8 @@ class Website(Website):
     @http.route('/student/register', type='http', auth='public', website=True)
     def student_register(self, **kw):
         user = request.env.user
-        if not user._is_public():
-            if user.has_group('student_management.group_teacher') and not user.has_group('student_management.group_admin'):
-                return request.render('website.403')
+        if not user._is_public() and user.has_group('student_management.group_teacher') and not user.has_group('student_management.group_admin'):
+            return request.render('website.403')
 
         standards = request.env['student.standard'].sudo().search([])
         return request.render('student_management.student_registration_form_temp', {
@@ -42,9 +41,8 @@ class Website(Website):
     @http.route('/student/register/submit', type='http', auth='public', methods=['POST'], website=True, csrf=True)
     def student_register_submit(self, **post):
         user = request.env.user
-        if not user._is_public():
-            if user.has_group('student_management.group_teacher') and not user.has_group('student_management.group_admin'):
-                return request.render('website.403')
+        if not user._is_public() and user.has_group('student_management.group_teacher') and not user.has_group('student_management.group_admin'):
+            return request.render('website.403')
 
         name = post.get('name')
         roll_number = post.get('roll_number')
