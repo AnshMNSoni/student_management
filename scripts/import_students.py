@@ -16,7 +16,6 @@ def import_students(env):
 
     print("Mocking email sending systems to speed up import...")
     mail_mail_class = type(env['mail.mail'])
-    # original_mail_send = mail_mail_class.send
     mail_mail_class.send = lambda *args, **kwargs: True
 
     res_users_class = type(env['res.users'])
@@ -133,12 +132,3 @@ def import_students(env):
 
     finally:
         print("Restoring email sending functions...")
-        # mail_mail_class.send = original_mail_send
-        # if original_signup_email:
-        #     res_users_class._send_signup_email = original_signup_email
-
-if 'env' in globals():
-    import_students(env)
-else:
-    print("This script must be run inside Odoo Shell.")
-    print("Usage: python odoo-bin shell -c odoo.conf < path/to/import_students.py")
