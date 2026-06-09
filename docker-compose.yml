@@ -19,6 +19,7 @@ services:
     volumes:
       - ./custom_addons:/mnt/production-addons
       - ./odoo.conf:/etc/odoo/odoo.conf
+      - odoo_data:/var/lib/odoo
     environment:
       HOST: db
       USER: ${POSTGRES_USER:-odoo}
@@ -31,3 +32,4 @@ services:
 
 volumes:
   postgres_data:
+  odoo_data:
