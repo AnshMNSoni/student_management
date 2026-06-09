@@ -88,10 +88,15 @@ class StudentFees(models.Model):
             # Find or create a service product for "School Fees"
             product = self.env['product.product'].search([('name', '=', 'School Fees')], limit=1)
             if not product:
-                product = self.env['product.product'].create({
+                product_vals = {
                     'name': 'School Fees',
                     'type': 'service',
-                })
+                }
+                if 'is_published' in self.env['product.product']._fields:
+                    product_vals['is_published'] = True
+                if 'publish_date' in self.env['product.product']._fields:
+                    product_vals['publish_date'] = fields.Datetime.now()
+                product = self.env['product.product'].create(product_vals)
 
             # 1. Create Quotation (sale.order)
             sale_order = self.env['sale.order'].create({

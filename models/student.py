@@ -95,20 +95,25 @@ class Student(models.Model):
     @api.constrains('age')
     def _check_age(self):
         for record in self:
-            if record.age and record.age <= 0:
+            if record.age is not False and record.age <= 0:
                 raise ValidationError("Age must be greater than zero.")
             
+    def _check_email_value(self, email):
+        pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+        if email and not re.match(pattern, email):
+            raise ValidationError("Please enter a valid email address.")
+
     @api.constrains('email')
     def _check_email(self):
-        pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
-    
         for record in self:
-            if record.email and not re.match(pattern, record.email):
-                raise ValidationError("Please enter a valid email address.")
+            self._check_email_value(record.email)
+
     @api.model_create_multi
     def create(self, vals_list):
         partner_model = self.env['res.partner']
         for vals in vals_list:
+            if 'email' in vals:
+                self._check_email_value(vals['email'])
             if not vals.get('partner_id'):
                 email = vals.get('email')
                 existing_partner = False
@@ -135,6 +140,11 @@ class Student(models.Model):
                     'amount': record.standard_id.fees_amount,
                 })
         return records
+
+    def write(self, vals):
+        if 'email' in vals:
+            self._check_email_value(vals['email'])
+        return super().write(vals)
 
     @api.model
     def _register_hook(self):
