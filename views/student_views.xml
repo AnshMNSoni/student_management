@@ -12,6 +12,7 @@
                 <field name="age" />
                 <field name="email" widget="email" />
                 <field name="admission_date" />
+                <field name="fee_payment_deadline" />
                 <field name="status" widget="badge" />
                 <field name="fee_status" widget="badge" decoration-success="fee_status == 'paid'" decoration-warning="fee_status == 'unpaid'" decoration-info="fee_status == 'no_fees'"/>
             </list>
@@ -60,6 +61,7 @@
                             <field name="standard" invisible="1"/>
                             <field name="subject_ids" widget="many2many_tags" domain="[('standard_name', '=', standard)]" options="{'no_create': True}"/>
                             <field name="admission_date" />
+                            <field name="fee_payment_deadline" />
                             <field name="status" widget="badge" />
                             <field name="fee_status" widget="badge" decoration-success="fee_status == 'paid'" decoration-warning="fee_status == 'unpaid'" decoration-info="fee_status == 'no_fees'"/>
                         </group>
