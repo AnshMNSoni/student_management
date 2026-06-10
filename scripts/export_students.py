@@ -2,11 +2,9 @@ import os
 import openpyxl
 
 def export_students(env):
-    try:
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        excel_path = os.path.abspath(os.path.join(script_dir, '..', 'data', 'data.xlsx'))
-    except NameError:
-        excel_path = os.path.abspath(os.path.join(os.getcwd(), 'custom_addons', 'student_management', 'data', 'data.xlsx'))
+    from odoo.modules.module import get_module_path
+    module_path = get_module_path('student_management')
+    excel_path = os.path.join(module_path, 'data', 'data.xlsx')
 
     os.makedirs(os.path.dirname(excel_path), exist_ok=True)
 
