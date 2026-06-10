@@ -143,6 +143,3 @@ def import_students(env):
 
     finally:
         print("Restoring email sending functions...")
-
-if 'env' in globals():
-    import_students(env)
