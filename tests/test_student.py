@@ -129,3 +129,55 @@ class TestStudent(TransactionCase):
         self.assertEqual(fees.description, "School Fees for 10-A")
         self.assertEqual(fees.state, 'draft')
         self.assertEqual(student.fee_status, 'unpaid')
+
+    def test_07_fee_payment_deadline_and_cron(self):
+        """Test calculation of fee payment deadline and daily cron checker."""
+        from dateutil.relativedelta import relativedelta
+        today = fields.Date.today()
+        
+        # 1. Verify automatic calculation of deadline
+        admission_date = today - relativedelta(days=45)
+        student_overdue = self.env['student.management'].create({
+            'name': 'Overdue Student',
+            'roll_number': 'S107',
+            'age': 15,
+            'email': 'overdue.student@example.com',
+            'admission_date': admission_date,
+            'standard_id': self.standard_10.id,
+        })
+        
+        expected_deadline = admission_date + relativedelta(months=1)
+        self.assertEqual(student_overdue.fee_payment_deadline, expected_deadline)
+        self.assertFalse(student_overdue.deadline_miss_mail_sent)
+        
+        # 2. Verify cron sends email to overdue student without timely invoice
+        self.env['student.management']._cron_check_payment_deadline()
+        self.assertTrue(student_overdue.deadline_miss_mail_sent, "Student should be marked as deadline missed sent.")
+        
+        # 3. Verify student with a timely invoice is NOT emailed
+        student_with_invoice = self.env['student.management'].create({
+            'name': 'Paid Student',
+            'roll_number': 'S108',
+            'age': 15,
+            'email': 'paid.student@example.com',
+            'admission_date': admission_date,
+            'standard_id': self.standard_10.id,
+        })
+        
+        # Check that fee was auto-created
+        fee = self.env['student.fees'].search([('student_id', '=', student_with_invoice.id)], limit=1)
+        self.assertTrue(fee)
+        
+        # Create a mock invoice dated before the deadline
+        invoice_date = admission_date + relativedelta(days=15)
+        invoice = self.env['account.move'].create({
+            'move_type': 'out_invoice',
+            'partner_id': student_with_invoice.partner_id.id,
+            'invoice_date': invoice_date,
+        })
+        fee.invoice_id = invoice.id
+        
+        # Run cron checker again
+        self.env['student.management']._cron_check_payment_deadline()
+        self.assertFalse(student_with_invoice.deadline_miss_mail_sent, "Student with timely invoice should not be marked as deadline missed sent.")
+

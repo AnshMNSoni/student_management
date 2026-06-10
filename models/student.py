@@ -1,5 +1,6 @@
 from odoo import models, fields, api
 from odoo.exceptions import ValidationError
+from dateutil.relativedelta import relativedelta
 import re
 
 
@@ -25,6 +26,25 @@ class Student(models.Model):
     roll_number = fields.Char(string='Roll Number', required=True)
     age = fields.Integer(string='Age')
     admission_date = fields.Date(string='Admission Date')
+    fee_payment_deadline = fields.Date(
+        string='Fee Payment Deadline',
+        compute='_compute_fee_payment_deadline',
+        store=True,
+        readonly=False
+    )
+    deadline_miss_mail_sent = fields.Boolean(
+        string='Deadline Missed Email Sent',
+        default=False,
+        copy=False
+    )
+
+    @api.depends('admission_date')
+    def _compute_fee_payment_deadline(self):
+        for record in self:
+            if record.admission_date:
+                record.fee_payment_deadline = record.admission_date + relativedelta(months=1)
+            else:
+                record.fee_payment_deadline = False
     standard_id = fields.Many2one(
         'student.standard',
         string='Standard'
@@ -219,3 +239,30 @@ class Student(models.Model):
         res = super().unlink()
         partners.unlink()
         return res
+
+    def _cron_check_payment_deadline(self):
+        today = fields.Date.today()
+        students = self.search([
+            ('fee_payment_deadline', '<', today),
+            ('deadline_miss_mail_sent', '=', False),
+            ('status', 'in', ['draft', 'active']),
+        ])
+        template = self.env.ref('student_management.email_template_fee_deadline_miss', raise_if_not_found=False)
+        for student in students:
+            if not student.fee_ids or student.fee_status == 'no_fees':
+                continue
+            has_invoice_on_time = False
+            for fee in student.fee_ids:
+                if fee.invoice_id:
+                    inv_date = fee.invoice_id.invoice_date or fields.Datetime.to_date(fee.invoice_id.create_date)
+                    if inv_date and inv_date <= student.fee_payment_deadline:
+                        has_invoice_on_time = True
+                        break
+            if not has_invoice_on_time:
+                if template:
+                    template.sudo().send_mail(student.id, force_send=True)
+                student.message_post(
+                    body="Fee payment deadline missed. Email notification sent.",
+                    subtype_xmlid="mail.mt_note"
+                )
+                student.write({'deadline_miss_mail_sent': True})

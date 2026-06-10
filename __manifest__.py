@@ -10,6 +10,7 @@
         'security/student_security.xml',
         'security/ir.model.access.csv',
         'data/mail_template_data.xml',
+        'data/student_cron.xml',
         'views/student_views.xml',
         'views/student_standard_views.xml',
         'views/student_subject_views.xml',
