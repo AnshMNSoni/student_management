@@ -181,3 +181,60 @@ class TestStudent(TransactionCase):
         self.env['student.management']._cron_check_payment_deadline()
         self.assertFalse(student_with_invoice.deadline_miss_mail_sent, "Student with timely invoice should not be marked as deadline missed sent.")
 
+    def test_08_multi_company_student_isolation(self):
+        """Test multi-company record rules filter students of other companies."""
+        # Setup another company
+        company_b = self.env['res.company'].create({'name': 'Delhi Campus'})
+        
+        # Current user is in Main Company
+        main_company = self.env.company
+        
+        # Create student in main company
+        student_main = self.env['student.management'].create({
+            'name': 'Mumbai Student',
+            'roll_number': 'S201',
+            'age': 15,
+            'email': 'mumbai.student@example.com',
+            'admission_date': fields.Date.today(),
+            'standard_id': self.standard_10.id,
+            'company_id': main_company.id,
+        })
+        
+        # Create standard in Delhi Campus
+        standard_delhi = self.env['student.standard'].create({
+            'standard': '10',
+            'division': 'B',
+            'fees_amount': 6000.0,
+            'room_number': 'Room 202',
+            'strength': 25,
+            'company_id': company_b.id,
+        })
+        
+        # Create student in Delhi Campus
+        student_delhi = self.env['student.management'].create({
+            'name': 'Delhi Student',
+            'roll_number': 'S202',
+            'age': 16,
+            'email': 'delhi.student@example.com',
+            'admission_date': fields.Date.today(),
+            'standard_id': standard_delhi.id,
+            'company_id': company_b.id,
+        })
+        
+        # Create a teacher user belonging only to Delhi Campus
+        teacher_delhi = self.env['res.users'].create({
+            'name': 'Delhi Teacher',
+            'login': 'delhi_teacher',
+            'email': 'delhi.teacher@example.com',
+            'company_id': company_b.id,
+            'company_ids': [(6, 0, [company_b.id])],
+            'group_ids': [(6, 0, [self.env.ref('student_management.group_teacher').id])],
+        })
+        
+        # Access with Delhi teacher (who only has access to Delhi company)
+        students_visible = self.env['student.management'].with_user(teacher_delhi).search([])
+        
+        self.assertNotIn(student_main.id, students_visible.ids, "Delhi teacher should not see Mumbai students.")
+        self.assertIn(student_delhi.id, students_visible.ids, "Delhi teacher should see Delhi students.")
+
+

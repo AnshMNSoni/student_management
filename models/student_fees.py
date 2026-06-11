@@ -12,6 +12,13 @@ class StudentFees(models.Model):
         required=True,
         ondelete='cascade'
     )
+    company_id = fields.Many2one(
+        'res.company',
+        string='Company',
+        related='student_id.company_id',
+        store=True,
+        readonly=True
+    )
     description = fields.Char(
         string='Description',
         required=True,
@@ -85,22 +92,26 @@ class StudentFees(models.Model):
             if not partner:
                 raise ValidationError("The selected student has no associated partner record.")
 
+            company = record.company_id or self.env.company
+            self_comp = self.with_company(company)
+
             # Find or create a service product for "School Fees"
-            product = self.env['product.product'].search([('name', '=', 'School Fees')], limit=1)
+            product = self_comp.env['product.product'].search([('name', '=', 'School Fees')], limit=1)
             if not product:
                 product_vals = {
                     'name': 'School Fees',
                     'type': 'service',
                 }
-                if 'is_published' in self.env['product.product']._fields:
+                if 'is_published' in self_comp.env['product.product']._fields:
                     product_vals['is_published'] = True
-                if 'publish_date' in self.env['product.product']._fields:
+                if 'publish_date' in self_comp.env['product.product']._fields:
                     product_vals['publish_date'] = fields.Datetime.now()
-                product = self.env['product.product'].create(product_vals)
+                product = self_comp.env['product.product'].create(product_vals)
 
             # 1. Create Quotation (sale.order)
-            sale_order = self.env['sale.order'].create({
+            sale_order = self_comp.env['sale.order'].create({
                 'partner_id': partner.id,
+                'company_id': company.id,
                 'order_line': [
                     (0, 0, {
                         'name': record.description or "School Fees",

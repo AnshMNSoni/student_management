@@ -104,4 +104,40 @@
         <field name="perm_create" eval="True"/>
         <field name="perm_unlink" eval="True"/>
     </record>
+
+    <!-- Multi-Company Rules -->
+    <record id="rule_student_management_multi_company" model="ir.rule">
+        <field name="name">Student Profile Multi-Company</field>
+        <field name="model_id" ref="model_student_management"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+
+    <record id="rule_student_standard_multi_company" model="ir.rule">
+        <field name="name">Student Standard Multi-Company</field>
+        <field name="model_id" ref="model_student_standard"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+
+    <record id="rule_student_subject_multi_company" model="ir.rule">
+        <field name="name">Student Subject Multi-Company</field>
+        <field name="model_id" ref="model_student_subject"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+
+    <record id="rule_student_result_multi_company" model="ir.rule">
+        <field name="name">Student Result Multi-Company</field>
+        <field name="model_id" ref="model_student_result"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+
+    <record id="rule_student_fees_multi_company" model="ir.rule">
+        <field name="name">Student Fees Multi-Company</field>
+        <field name="model_id" ref="model_student_fees"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
 </odoo>

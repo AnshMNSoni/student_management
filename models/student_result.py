@@ -14,6 +14,13 @@ class StudentResults(models.Model):
         required=True,
         ondelete='cascade'
     )
+    company_id = fields.Many2one(
+        'res.company',
+        string='Company',
+        related='student_id.company_id',
+        store=True,
+        readonly=True
+    )
     standard_id = fields.Many2one(
         'student.standard',
         string='Standard',

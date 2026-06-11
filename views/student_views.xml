@@ -8,6 +8,7 @@
         <field name="arch" type="xml">
             <list string="Students" default_order="name asc">
                 <field name="name" />
+                <field name="company_id" groups="base.group_multi_company" optional="show"/>
                 <field name="roll_number" />
                 <field name="age" />
                 <field name="email" widget="email" />
@@ -53,13 +54,14 @@
                             <field name="name" />
                             <field name="roll_number" />
                             <field name="age" />
+                            <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
                         </group>
 
                         <group>
                             <field name="email" widget="email" />
-                            <field name="standard_id" required="1" string="Standard/Class"/>
+                            <field name="standard_id" required="1" string="Standard/Class" domain="[('company_id', '=', company_id)]"/>
                             <field name="standard" invisible="1"/>
-                            <field name="subject_ids" widget="many2many_tags" domain="[('standard_name', '=', standard)]" options="{'no_create': True}"/>
+                            <field name="subject_ids" widget="many2many_tags" domain="[('standard_name', '=', standard), '|', ('company_id', '=', False), ('company_id', '=', company_id)]" options="{'no_create': True}"/>
                             <field name="admission_date" />
                             <field name="fee_payment_deadline" />
                             <field name="status" widget="badge" />
@@ -140,6 +142,7 @@
                 <field name="name" />
                 <field name="roll_number" />
                 <field name="email" />
+                <field name="company_id" groups="base.group_multi_company"/>
 
                 <!-- Filters -->
                 <filter
@@ -159,6 +162,10 @@
                     string="Draft"
                     domain="[('status', '=', 'draft')]"
                 />
+
+                <group>
+                    <filter string="Branch/Campus" name="group_by_company" context="{'group_by': 'company_id'}" groups="base.group_multi_company"/>
+                </group>
 
             </search>
         </field>

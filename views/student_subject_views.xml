@@ -8,6 +8,7 @@
             <list string="Subjects" create="0" edit="0">
                 <field name="name"/>
                 <field name="standard_name"/>
+                <field name="company_id" groups="base.group_multi_company"/>
             </list>
         </field>
     </record>
@@ -22,6 +23,7 @@
                     <group>
                         <field name="name"/>
                         <field name="standard_name"/>
+                        <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
                     </group>
                 </sheet>
             </form>
@@ -36,8 +38,10 @@
             <search string="Search Subjects">
                 <field name="name"/>
                 <field name="standard_name"/>
+                <field name="company_id" groups="base.group_multi_company"/>
                 <group>
                     <filter string="Standard" name="group_by_standard" context="{'group_by':'standard_name'}"/>
+                    <filter string="Branch/Campus" name="group_by_company" context="{'group_by': 'company_id'}" groups="base.group_multi_company"/>
                 </group>
             </search>
         </field>

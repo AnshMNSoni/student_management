@@ -9,6 +9,7 @@
                 <field name="name"/>
                 <field name="standard"/>
                 <field name="division"/>
+                <field name="company_id" groups="base.group_multi_company"/>
                 <field name="room_number"/>
                 <field name="strength"/>
                 <field name="fees_amount"/>
@@ -28,6 +29,7 @@
                             <field name="standard" required="1"/>
                             <field name="division" required="1"/>
                             <field name="name" readonly="1" force_save="1"/>
+                            <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
                         </group>
                         <group>
                             <field name="room_number"/>
@@ -64,11 +66,29 @@
         </field>
     </record>
 
+    <!-- Search View -->
+    <record id="view_student_standard_search" model="ir.ui.view">
+        <field name="name">student.standard.search</field>
+        <field name="model">student.standard</field>
+        <field name="arch" type="xml">
+            <search string="Search Standards">
+                <field name="name"/>
+                <field name="standard"/>
+                <field name="division"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <group>
+                    <filter string="Branch/Campus" name="group_by_company" context="{'group_by': 'company_id'}" groups="base.group_multi_company"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
     <!-- Action -->
     <record id="action_student_standard" model="ir.actions.act_window">
         <field name="name">Standards</field>
         <field name="res_model">student.standard</field>
         <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_student_standard_search"/>
     </record>
 
     <!-- Menu Item -->

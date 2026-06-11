@@ -23,6 +23,12 @@ class Student(models.Model):
         required=True,
         ondelete='cascade'
     )
+    company_id = fields.Many2one(
+        'res.company',
+        string='Company',
+        required=True,
+        default=lambda self: self.env.company
+    )
     roll_number = fields.Char(string='Roll Number', required=True)
     age = fields.Integer(string='Age')
     admission_date = fields.Date(string='Admission Date')
@@ -260,7 +266,7 @@ class Student(models.Model):
                         break
             if not has_invoice_on_time:
                 if template:
-                    template.sudo().send_mail(student.id, force_send=True)
+                    template.sudo().with_company(student.company_id).send_mail(student.id, force_send=True)
                 student.message_post(
                     body="Fee payment deadline missed. Email notification sent.",
                     subtype_xmlid="mail.mt_note"
