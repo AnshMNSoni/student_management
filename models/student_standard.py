@@ -7,6 +7,12 @@ class StudentStandard(models.Model):
 
     standard = fields.Char(string="Standard", required=True)
     division = fields.Char(string="Division/Grade", required=True, default="A")
+    company_id = fields.Many2one(
+        'res.company',
+        string='Company',
+        required=True,
+        default=lambda self: self.env.company
+    )
     name = fields.Char(
         string="Standard Name",
         compute="_compute_name",

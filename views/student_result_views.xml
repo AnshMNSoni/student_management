@@ -10,6 +10,7 @@
                 <field name="sequence" readonly="1"/>
                 <field name="student_id"/>
                 <field name="standard_id"/>
+                <field name="company_id" groups="base.group_multi_company"/>
                 <field name="overall_percentage" string="Overall Result (%)"/>
                 <field name="overall_grade"/>
                 <field name="result_date"/>
@@ -32,6 +33,7 @@
                             <field name="standard" invisible="1"/>
                         </group>
                         <group>
+                            <field name="company_id" groups="base.group_multi_company"/>
                             <field name="overall_percentage" string="Overall Result (%)" readonly="1"/>
                             <field name="overall_grade" readonly="1"/>
                             <field name="result_date"/>
@@ -62,11 +64,30 @@
         </field>
     </record>
 
+    <!-- Search View -->
+    <record id="view_student_result_search" model="ir.ui.view">
+        <field name="name">student.result.search</field>
+        <field name="model">student.result</field>
+        <field name="arch" type="xml">
+            <search string="Search Results">
+                <field name="student_id"/>
+                <field name="standard_id"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <group>
+                    <filter string="Student" name="group_by_student" context="{'group_by':'student_id'}"/>
+                    <filter string="Standard" name="group_by_standard" context="{'group_by':'standard_id'}"/>
+                    <filter string="Branch/Campus" name="group_by_company" context="{'group_by': 'company_id'}" groups="base.group_multi_company"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
     <!-- Action -->
     <record id="action_student_result" model="ir.actions.act_window">
         <field name="name">Results</field>
         <field name="res_model">student.result</field>
         <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_student_result_search"/>
         <field name="help" type="html">
             <p class="oe_view_nocontent_create">
                 Create student results records.

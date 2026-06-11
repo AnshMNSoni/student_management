@@ -8,3 +8,8 @@ class StudentSubject(models.Model):
     standard_name = fields.Char(
         string="Standard"
     )
+    company_id = fields.Many2one(
+        'res.company',
+        string='Company',
+        default=lambda self: self.env.company
+    )
