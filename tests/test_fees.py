@@ -148,3 +148,181 @@ class TestStudentFees(TransactionCase):
         self.assertTrue(fee.sale_order_id, "Sales Order should be generated.")
         self.assertEqual(fee.sale_order_id.company_id.id, company_b.id, "Sales Order should belong to student's company.")
 
+
+from odoo.tests.common import HttpCase
+from unittest.mock import patch, Mock
+import re
+
+class TestStudentFeesPortal(HttpCase):
+
+    def setUp(self):
+        super(TestStudentFeesPortal, self).setUp()
+        
+        # Set up System Parameters
+        self.env['ir.config_parameter'].sudo().set_param('student_management.razorpay_key_id', 'rzp_test_dummykey')
+        self.env['ir.config_parameter'].sudo().set_param('student_management.razorpay_key_secret', 'dummysecret')
+
+        # Setup standard and student
+        self.standard = self.env['student.standard'].create({
+            'standard': '12',
+            'division': 'A',
+            'fees_amount': 6000.0,
+        })
+        self.student = self.env['student.management'].create({
+            'name': 'Portal Student',
+            'roll_number': 'S199',
+            'age': 18,
+            'email': 'portal.student@example.com',
+            'standard_id': self.standard.id,
+        })
+        # Remove automatically created fees if any
+        self.student.fee_ids.unlink()
+
+        # Create the fee record
+        self.fee = self.env['student.fees'].create({
+            'student_id': self.student.id,
+            'description': 'Term 1 Fees',
+            'amount': 3000.0,
+        })
+
+        # Create student user linked to partner
+        self.student_user = self.env['res.users'].create({
+            'name': 'Portal Student User',
+            'login': 'portal.student@example.com',
+            'email': 'portal.student@example.com',
+            'partner_id': self.student.partner_id.id,
+            'password': 'password123',
+            'group_ids': [(6, 0, [self.env.ref('student_management.group_student').id])]
+        })
+        
+        # Start patching requests.post
+        self.patcher = patch('requests.post')
+        self.mock_post = self.patcher.start()
+
+    def tearDown(self):
+        self.patcher.stop()
+        super(TestStudentFeesPortal, self).tearDown()
+
+    def test_portal_pay_fee_page(self):
+        """Test payment page initiation and Razorpay order generation."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            'id': 'order_dummy123',
+            'amount': 300000,
+            'currency': 'INR',
+        }
+        self.mock_post.return_value = mock_response
+
+        # Authenticate as student
+        self.authenticate('portal.student@example.com', 'password123')
+
+        # Request payment page
+        response = self.url_open(f'/my/student/fees/pay/{self.fee.id}')
+        
+        self.assertEqual(response.status_code, 200, "Payment page should load successfully.")
+        self.assertIn(b'Connecting to Razorpay', response.content)
+        self.assertIn(b'order_dummy123', response.content)
+        self.assertIn(b'rzp_test_dummykey', response.content)
+
+    def test_portal_pay_fee_callback_success(self):
+        """Test successful payment callback with valid Razorpay signature."""
+        self.authenticate('portal.student@example.com', 'password123')
+        
+        # Create Sales Order
+        self.fee.action_pay()
+        self.assertTrue(self.fee.sale_order_id)
+        self.assertEqual(self.fee.sale_order_id.state, 'draft')
+
+        # Generate correct signature for dummy values
+        import hmac
+        import hashlib
+        msg = b"order_dummy123|pay_dummy123"
+        secret = b"dummysecret"
+        signature = hmac.new(secret, msg, hashlib.sha256).hexdigest()
+
+        # Open fees list page to get CSRF token
+        res = self.url_open('/my/student/fees')
+        csrf_match = re.search(r'csrf_token:\s*"([^"]+)"', res.text)
+        if not csrf_match:
+            csrf_match = re.search(r'name="csrf_token"\s+value="([^"]+)"', res.text)
+        csrf_token = csrf_match.group(1) if csrf_match else ''
+
+        # Submit callback POST
+        payload = {
+            'csrf_token': csrf_token,
+            'razorpay_payment_id': 'pay_dummy123',
+            'razorpay_order_id': 'order_dummy123',
+            'razorpay_signature': signature,
+        }
+        res_post = self.url_open(
+            f'/my/student/fees/pay/callback/{self.fee.id}',
+            data=payload
+        )
+        
+        # Verify success redirect
+        self.assertEqual(res_post.status_code, 200)
+        self.assertIn('payment_success=1', res_post.url)
+        
+        # Verify state transitioned to paid and sale order confirmed
+        self.fee.invalidate_recordset()
+        self.assertEqual(self.fee.state, 'paid', "Fee record should be marked as paid.")
+        self.assertEqual(self.fee.sale_order_id.state, 'sale', "Associated Sale Order should be confirmed.")
+
+    def test_portal_pay_fee_callback_invalid_signature(self):
+        """Test payment callback with an invalid Razorpay signature."""
+        self.authenticate('portal.student@example.com', 'password123')
+        
+        self.fee.action_pay()
+        self.assertTrue(self.fee.sale_order_id)
+        self.assertEqual(self.fee.sale_order_id.state, 'draft')
+
+        # Open fees list page to get CSRF token
+        res = self.url_open('/my/student/fees')
+        csrf_match = re.search(r'csrf_token:\s*"([^"]+)"', res.text)
+        if not csrf_match:
+            csrf_match = re.search(r'name="csrf_token"\s+value="([^"]+)"', res.text)
+        csrf_token = csrf_match.group(1) if csrf_match else ''
+
+        # Submit callback POST with bad signature
+        payload = {
+            'csrf_token': csrf_token,
+            'razorpay_payment_id': 'pay_dummy123',
+            'razorpay_order_id': 'order_dummy123',
+            'razorpay_signature': 'invalid_signature_hash',
+        }
+        res_post = self.url_open(
+            f'/my/student/fees/pay/callback/{self.fee.id}',
+            data=payload
+        )
+        
+        # Verify error redirect
+        self.assertEqual(res_post.status_code, 200)
+        self.assertIn('payment_error=invalid_signature', res_post.url)
+        
+        # Verify state did not change
+        self.fee.invalidate_recordset()
+        self.assertEqual(self.fee.state, 'draft')
+        self.assertEqual(self.fee.sale_order_id.state, 'draft')
+
+    def test_portal_pay_fee_access_control(self):
+        """Test that non-student users are blocked from access."""
+        # Create portal user not associated with any student
+        self.non_student_user = self.env['res.users'].create({
+            'name': 'Other User',
+            'login': 'other.user@example.com',
+            'email': 'other.user@example.com',
+            'password': 'password123',
+            'group_ids': [(6, 0, [self.env.ref('base.group_portal').id])]
+        })
+
+        self.authenticate('other.user@example.com', 'password123')
+
+        # Request payment page
+        response = self.url_open(f'/my/student/fees/pay/{self.fee.id}')
+        
+        # Verify redirect to non-student portal dashboard /my
+        self.assertIn('/my', response.url)
+        self.assertNotIn('fees/pay', response.url)
+
+

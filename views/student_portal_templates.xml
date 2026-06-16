@@ -269,6 +269,31 @@
                     </div>
                     
                     <div class="card-body p-4 bg-light">
+                        <!-- Payment Alerts -->
+                        <div t-if="request.params.get('payment_success')" class="alert alert-success alert-dismissible fade show rounded-3 mb-4 shadow-sm" role="alert">
+                            <i class="fa fa-check-circle me-2"/> <strong>Payment Successful!</strong> Your fee payment was processed and verified successfully.
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        <div t-if="request.params.get('payment_error')" class="alert alert-danger alert-dismissible fade show rounded-3 mb-4 shadow-sm" role="alert">
+                            <i class="fa fa-exclamation-circle me-2"/> <strong>Payment Failed!</strong>
+                            <t t-if="request.params.get('payment_error') == 'not_configured'">
+                                Razorpay payment gateway is not configured on this system. Please contact the administrator.
+                            </t>
+                            <t t-elif="request.params.get('payment_error') == 'invalid_signature'">
+                                Payment security signature mismatch. Transaction verification failed.
+                            </t>
+                            <t t-elif="request.params.get('payment_error') == 'api_error'">
+                                Razorpay Order API returned an error. Please try again later.
+                            </t>
+                            <t t-elif="request.params.get('payment_error') == 'connection_error'">
+                                Unable to establish a connection with Razorpay payment gateway. Please check your network.
+                            </t>
+                            <t t-else="">
+                                An unexpected error occurred while processing your payment.
+                            </t>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+
                         <t t-if="not fees">
                             <div class="alert alert-info text-center py-5 rounded-3 mb-0">
                                 <i class="fa fa-info-circle fa-3x mb-3 text-info"/>
@@ -302,7 +327,7 @@
                                                     </span>
                                                 </td>
                                                 <td class="pe-4">
-                                                    <t t-if="fee.sale_order_id">
+                                                    <t t-if="fee.sale_order_id and fee.state == 'paid'">
                                                         <a t-attf-href="/my/orders/#{fee.sale_order_id.id}" class="btn btn-outline-primary btn-sm rounded-pill shadow-sm">
                                                             <i class="fa fa-file-text-o me-1"/>View Order: <t t-esc="fee.sale_order_id.name"/>
                                                         </a>
@@ -326,6 +351,96 @@
                             </div>
                         </t>
                     </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- Razorpay Checkout Template -->
+    <template id="portal_student_pay_razorpay" name="Student Razorpay Payment">
+        <t t-call="portal.portal_layout">
+            <div class="container my-5 d-flex justify-content-center">
+                <div class="card border-0 shadow-lg p-5 text-center bg-white" style="border-radius: 24px; max-width: 500px; width: 100%;">
+                    <div class="mb-4">
+                        <div class="spinner-border text-primary" role="status" style="width: 4rem; height: 4rem; border-width: 0.25em;">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                    <h3 class="fw-bold text-dark mb-2">Connecting to Razorpay</h3>
+                    <p class="text-muted mb-4">Please do not close this window or click the back button.</p>
+                    
+                    <div class="p-4 rounded-3 text-start mb-4" style="background-color: #f8f9fa; border-left: 5px solid #11998e;">
+                        <div class="row mb-2">
+                            <div class="col fw-bold text-muted text-uppercase small">Description</div>
+                            <div class="col-auto fw-bold text-dark text-end" t-esc="fee.description"/>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col fw-bold text-muted text-uppercase small">Student Roll No</div>
+                            <div class="col-auto fw-bold text-dark text-end" t-esc="student.roll_number"/>
+                        </div>
+                        <div class="row">
+                            <div class="col fw-bold text-muted text-uppercase small">Total Amount</div>
+                            <div class="col-auto fw-bold text-success text-end fs-4" t-esc="fee.amount" t-options='{"widget": "monetary", "display_currency": request.env.company.currency_id}'/>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button id="rzp-button1" class="btn btn-success btn-lg rounded-pill shadow-sm fw-bold">
+                            <i class="fa fa-credit-card me-2"/>Retry Payment
+                        </button>
+                        <a href="/my/student/fees" class="btn btn-link text-muted">Cancel and Go Back</a>
+                    </div>
+
+                    <!-- Hidden callback Form -->
+                    <form id="razorpay-callback-form" method="POST" t-attf-action="/my/student/fees/pay/callback/#{fee.id}">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <input type="hidden" id="rzp_payment_id" name="razorpay_payment_id"/>
+                        <input type="hidden" id="rzp_order_id" name="razorpay_order_id"/>
+                        <input type="hidden" id="rzp_signature" name="razorpay_signature"/>
+                    </form>
+
+                    <!-- Razorpay SDK -->
+                    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+                    <script type="text/javascript">
+                        document.addEventListener("DOMContentLoaded", function() {
+                            var options = {
+                                "key": "<t t-esc='key_id'/>",
+                                "amount": "<t t-esc='amount'/>",
+                                "currency": "<t t-esc='currency'/>",
+                                "name": "<t t-esc='company_name'/>",
+                                "description": "<t t-esc='fee.description'/>",
+                                "order_id": "<t t-esc='order_id'/>",
+                                "handler": function (response){
+                                    document.getElementById('rzp_payment_id').value = response.razorpay_payment_id;
+                                    document.getElementById('rzp_order_id').value = response.razorpay_order_id;
+                                    document.getElementById('rzp_signature').value = response.razorpay_signature;
+                                    document.getElementById('razorpay-callback-form').submit();
+                                },
+                                "prefill": {
+                                    "name": "<t t-esc='student_name'/>",
+                                    "email": "<t t-esc='student_email'/>",
+                                    "contact": "<t t-esc='student_phone'/>"
+                                },
+                                "theme": {
+                                    "color": "#11998e"
+                                },
+                                "modal": {
+                                    "ondismiss": function(){
+                                        console.log('Checkout modal closed by user');
+                                    }
+                                }
+                            };
+                            var rzp1 = new Razorpay(options);
+                            
+                            // Auto open checkout on page load
+                            rzp1.open();
+                            
+                            document.getElementById('rzp-button1').onclick = function(e){
+                                rzp1.open();
+                                e.preventDefault();
+                            }
+                        });
+                    </script>
                 </div>
             </div>
         </t>

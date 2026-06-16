@@ -6,6 +6,9 @@ class TestStudentResults(TransactionCase):
     def setUp(self):
         super(TestStudentResults, self).setUp()
         
+        # Rename pre-existing subjects for standard 10 to isolate tests
+        self.env['student.subject'].search([('standard_name', '=', '10')]).write({'standard_name': '10_ignored'})
+        
         # Setup standard, student, and subjects
         self.standard = self.env['student.standard'].create({
             'standard': '10',

@@ -2,6 +2,11 @@ from odoo import http, fields
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager as portal_pager
 from odoo.addons.website.controllers.main import Website
+import requests
+import base64
+import hmac
+import hashlib
+
 
 class Website(Website):
 
@@ -247,10 +252,122 @@ class CustomerPortal(CustomerPortal):
         if not fee:
             return request.redirect('/my/student/fees')
 
-        if not fee.sale_order_id and fee.state == 'draft':
+        if fee.state == 'paid':
+            return request.redirect('/my/student/fees?payment_success=1')
+
+        # Ensure Sales Order is created
+        if not fee.sale_order_id:
             fee.action_pay()
 
-        if fee.sale_order_id:
-            return request.redirect(f'/my/orders/{fee.sale_order_id.id}')
+        if not fee.sale_order_id:
+            return request.redirect('/my/student/fees?payment_error=order_creation_failed')
 
-        return request.redirect('/my/student/fees')
+        # Fetch Razorpay credentials
+        ICP = request.env['ir.config_parameter'].sudo()
+        key_id = ICP.get_param('student_management.razorpay_key_id')
+        key_secret = ICP.get_param('student_management.razorpay_key_secret')
+
+        if not key_id or not key_secret:
+            return request.redirect('/my/student/fees?payment_error=not_configured')
+
+        # Generate Razorpay Order
+        amount_paise = int(round(fee.amount * 100))
+        currency = fee.company_id.currency_id.name or 'INR'
+
+        # Prepare basic auth header for Razorpay API
+        auth_str = f"{key_id}:{key_secret}"
+        auth_bytes = auth_str.encode('ascii')
+        base64_auth = base64.b64encode(auth_bytes).decode('ascii')
+
+        headers = {
+            'Authorization': f'Basic {base64_auth}',
+            'Content-Type': 'application/json'
+        }
+
+        data = {
+            'amount': amount_paise,
+            'currency': currency,
+            'receipt': f'receipt_fee_{fee.id}',
+            'payment_capture': 1
+        }
+
+        try:
+            response = requests.post(
+                'https://api.razorpay.com/v1/orders',
+                headers=headers,
+                json=data,
+                timeout=10
+            )
+            if response.status_code == 200:
+                rzp_order = response.json()
+                rzp_order_id = rzp_order.get('id')
+            else:
+                return request.redirect('/my/student/fees?payment_error=api_error')
+        except Exception:
+            return request.redirect('/my/student/fees?payment_error=connection_error')
+
+        values = self._prepare_portal_layout_values()
+        values.update({
+            'fee': fee,
+            'student': student,
+            'key_id': key_id,
+            'order_id': rzp_order_id,
+            'amount': amount_paise,
+            'currency': currency,
+            'company_name': fee.company_id.name or 'Student Portal',
+            'student_name': student.name,
+            'student_email': student.email or '',
+            'student_phone': student.phone or '',
+            'page_name': 'student_fees_pay',
+        })
+        return request.render('student_management.portal_student_pay_razorpay', values)
+
+    @http.route('/my/student/fees/pay/callback/<int:fee_id>', type='http', auth='user', methods=['POST'], website=True, csrf=True)
+    def portal_pay_fee_callback(self, fee_id, **post):
+        partner = request.env.user.partner_id
+        student = request.env['student.management'].sudo().search([('partner_id', '=', partner.id)], limit=1)
+        if not student:
+            return request.redirect('/my')
+
+        fee = request.env['student.fees'].sudo().search([
+            ('id', '=', fee_id),
+            ('student_id', '=', student.id)
+        ], limit=1)
+        
+        if not fee:
+            return request.redirect('/my/student/fees')
+
+        payment_id = post.get('razorpay_payment_id')
+        order_id = post.get('razorpay_order_id')
+        signature = post.get('razorpay_signature')
+
+        if not payment_id or not order_id or not signature:
+            return request.redirect('/my/student/fees?payment_error=missing_params')
+
+        # Fetch secret key to verify signature
+        ICP = request.env['ir.config_parameter'].sudo()
+        key_secret = ICP.get_param('student_management.razorpay_key_secret')
+
+        if not key_secret:
+            return request.redirect('/my/student/fees?payment_error=not_configured')
+
+        # Verify Signature
+        msg = f"{order_id}|{payment_id}".encode('utf-8')
+        secret = key_secret.encode('utf-8')
+        computed = hmac.new(secret, msg, hashlib.sha256).hexdigest()
+
+        if hmac.compare_digest(computed, signature):
+            # Signature matches, payment is authentic. Confirm Sale Order.
+            if fee.sale_order_id and fee.sale_order_id.state in ['draft', 'sent']:
+                fee.sale_order_id.action_confirm()
+
+            # Post a notification in student record chatter
+            student.message_post(
+                body=f"Payment of ₹{fee.amount:.2f} verified successfully for '{fee.description}' via Razorpay. "
+                     f"Payment ID: {payment_id}, Order ID: {order_id}.",
+                subtype_xmlid="mail.mt_note"
+            )
+            return request.redirect('/my/student/fees?payment_success=1')
+        else:
+            return request.redirect('/my/student/fees?payment_error=invalid_signature')
+
