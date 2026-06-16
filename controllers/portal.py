@@ -361,6 +361,9 @@ class CustomerPortal(CustomerPortal):
             if fee.sale_order_id and fee.sale_order_id.state in ['draft', 'sent']:
                 fee.sale_order_id.action_confirm()
 
+            # Create and post the invoice
+            fee.action_create_invoice()
+
             # Post a notification in student record chatter
             student.message_post(
                 body=f"Payment of ₹{fee.amount:.2f} verified successfully for '{fee.description}' via Razorpay. "

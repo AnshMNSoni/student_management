@@ -55,6 +55,7 @@ class StudentFeesWizard(models.TransientModel):
             })
         # Pay fees (creates quotation, sale order, invoice, payment)
         fee.action_pay()
+        fee.action_create_invoice()
 
         # Update wizard state (mostly for UI consistency)
         self.write({'state': 'paid'})

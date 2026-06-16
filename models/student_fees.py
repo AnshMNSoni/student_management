@@ -101,12 +101,15 @@ class StudentFees(models.Model):
                 product_vals = {
                     'name': 'School Fees',
                     'type': 'service',
+                    'invoice_policy': 'order',
                 }
                 if 'is_published' in self_comp.env['product.product']._fields:
                     product_vals['is_published'] = True
                 if 'publish_date' in self_comp.env['product.product']._fields:
                     product_vals['publish_date'] = fields.Datetime.now()
                 product = self_comp.env['product.product'].create(product_vals)
+            elif product.invoice_policy != 'order':
+                product.write({'invoice_policy': 'order'})
 
             # 1. Create Quotation (sale.order)
             sale_order = self_comp.env['sale.order'].create({
@@ -126,3 +129,45 @@ class StudentFees(models.Model):
             record.write({
                 'sale_order_id': sale_order.id,
             })
+
+    def action_create_invoice(self):
+        for record in self:
+            if not record.sale_order_id:
+                continue
+            if record.invoice_id:
+                continue
+
+            company = record.company_id or self.env.company
+            self_comp = self.with_company(company)
+
+            # Ensure the Sales Order is confirmed
+            if record.sale_order_id.state in ['draft', 'sent']:
+                record.sale_order_id.action_confirm()
+
+            # Create the invoice
+            invoices = record.sale_order_id._create_invoices(final=True)
+            if invoices:
+                invoices.action_post()
+                record.write({
+                    'invoice_id': invoices[0].id
+                })
+
+                # Try to automatically register the payment and mark the invoice as paid
+                try:
+                    payment_register = self_comp.env['account.payment.register'].with_context(
+                        active_model='account.move',
+                        active_ids=invoices.ids
+                    ).create({})
+                    payment_register._create_payments()
+                except Exception as e:
+                    self_comp.env['ir.logging'].sudo().create({
+                        'name': 'student_management.fees',
+                        'type': 'server',
+                        'dbname': self_comp.env.cr.dbname,
+                        'level': 'WARNING',
+                        'message': f"Could not auto-register payment for invoice {invoices[0].id}: {str(e)}",
+                        'path': 'models/student_fees.py',
+                        'func': 'action_create_invoice',
+                        'line': '0'
+                    })
+
