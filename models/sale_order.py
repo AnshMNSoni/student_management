@@ -8,13 +8,10 @@ class SaleOrder(models.Model):
     @api.onchange('package_id')
     def _onchange_package_id(self):
         if self.package_id:
-            # Clear existing order lines and recreate them based on package lines
-            lines = [Command.clear()]
+            lines = []
             for line in self.package_id.line_ids:
                 lines.append(Command.create({
                     'product_id': line.product_id.id,
                     'product_uom_qty': line.quantity,
                 }))
             self.order_line = lines
-        else:
-            self.order_line = [Command.clear()]

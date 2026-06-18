@@ -16,6 +16,7 @@
         <field name="arch" type="xml">
             <form string="Sale Package">
                 <sheet>
+                    <field name="selected_product_ids" invisible="1"/>
                     <group>
                         <field name="name" placeholder="e.g. Standard I Package"/>
                     </group>
@@ -23,7 +24,7 @@
                         <page string="Products" name="products">
                             <field name="line_ids">
                                 <list editable="bottom">
-                                    <field name="product_id" options="{'no_create': True}"/>
+                                    <field name="product_id" domain="[('id', 'not in', parent.selected_product_ids)]" options="{'no_create': True}"/>
                                     <field name="quantity"/>
                                 </list>
                             </field>
@@ -43,6 +44,6 @@
     <menuitem id="menu_sale_order_package"
               name="Sale Packages"
               action="action_sale_order_package"
-              parent="sale.menu_sale_config"
-              sequence="50"/>
+              parent="sale.prod_config_main"
+              sequence="40"/>
 </odoo>
