@@ -17,6 +17,8 @@
         'views/student_result_views.xml',
         'views/student_status_wizard_views.xml', 
         'views/student_fees_views.xml',
+        'views/sale_order_views.xml',
+        'views/sale_order_package_views.xml',
         'views/student_fees_wizard_views.xml',
         'views/student_portal_templates.xml',
         'views/student_registration_templates.xml',

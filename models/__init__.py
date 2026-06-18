@@ -4,3 +4,5 @@ from . import student_fees
 from . import student_standard
 from . import student_subject
 from . import res_users
+from . import sale_order_package
+from . import sale_order

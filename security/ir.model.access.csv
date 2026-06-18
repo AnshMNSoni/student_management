@@ -25,3 +25,5 @@ access_student_student_fees_wizard,student.fees.wizard,model_student_fees_wizard
 access_admin_student_result_line,student.result.line,model_student_result_line,group_admin,1,1,1,1
 access_teacher_student_result_line,student.result.line,model_student_result_line,group_teacher,1,1,1,0
 access_student_student_result_line,student.result.line,model_student_result_line,group_student,1,0,0,0
+access_sale_order_package_all,sale.order.package,model_sale_order_package,base.group_user,1,1,1,1
+access_sale_order_package_line_all,sale.order.package.line,model_sale_order_package_line,base.group_user,1,1,1,1

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_form_inherit_student_management" model="ir.ui.view">
+        <field name="name">sale.order.form.inherit.student.management</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <!-- Add package dropdown below the delivery address field -->
+            <xpath expr="//field[@name='partner_shipping_id']" position="after">
+                <field name="package_id" string="Package" options="{'no_create': True}"/>
+            </xpath>
+
+            <!-- Disable line additions in the Sales Order lines (both list/kanban) to enforce package usage only -->
+            <xpath expr="//field[@name='order_line']/list" position="attributes">
+                <attribute name="create">0</attribute>
+            </xpath>
+            <xpath expr="//field[@name='order_line']/kanban" position="attributes">
+                <attribute name="create">0</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>
