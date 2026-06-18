@@ -6,7 +6,6 @@ import requests
 import base64
 import hmac
 import hashlib
-import pdb;
 
 
 class Website(Website):
@@ -150,7 +149,6 @@ class CustomerPortal(CustomerPortal):
         values = super()._prepare_home_portal_values(counters)
         partner = request.env.user.partner_id
         student = request.env['student.management'].sudo().search([('partner_id', '=', partner.id)], limit=1)
-        pdb.set_trace()
 
         # Only inject the non-counter QWeb rendering variable if this is not a counters JSON-RPC call
         if request.httprequest.path != '/my/counters':
@@ -240,7 +238,6 @@ class CustomerPortal(CustomerPortal):
 
     @http.route('/my/student/fees/pay/<int:fee_id>', type='http', auth='user', website=True)
     def portal_pay_fee(self, fee_id, **kw):
-        pdb.set_trace()
         partner = request.env.user.partner_id
         student = request.env['student.management'].sudo().search([('partner_id', '=', partner.id)], limit=1)
         if not student:
@@ -300,7 +297,6 @@ class CustomerPortal(CustomerPortal):
                 json=data,
                 timeout=10
             )
-            pdb.set_trace()
             if response.status_code == 200:
                 rzp_order = response.json()
                 rzp_order_id = rzp_order.get('id')
@@ -327,7 +323,6 @@ class CustomerPortal(CustomerPortal):
 
     @http.route('/my/student/fees/pay/callback/<int:fee_id>', type='http', auth='user', methods=['POST'], website=True, csrf=True)
     def portal_pay_fee_callback(self, fee_id, **post):
-        pdb.set_trace()
         partner = request.env.user.partner_id
         student = request.env['student.management'].sudo().search([('partner_id', '=', partner.id)], limit=1)
         if not student:

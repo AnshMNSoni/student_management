@@ -84,7 +84,6 @@ class StudentFees(models.Model):
             record.display_name = f"Fee #{record.id}" if record.id else "New"
 
     def action_pay(self):
-        import pdb; pdb.set_trace()
         for record in self:
             if record.sale_order_id or record.state == 'paid':
                 continue
@@ -132,7 +131,6 @@ class StudentFees(models.Model):
             })
 
     def action_create_invoice(self):
-        import pdb; pdb.set_trace()
         for record in self:
             if not record.sale_order_id:
                 continue
