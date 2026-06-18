@@ -288,6 +288,9 @@
                             <t t-elif="request.params.get('payment_error') == 'connection_error'">
                                 Unable to establish a connection with Razorpay payment gateway. Please check your network.
                             </t>
+                            <t t-elif="request.params.get('payment_error') == 'cancelled'">
+                                Payment process was cancelled by the user.
+                            </t>
                             <t t-else="">
                                 An unexpected error occurred while processing your payment.
                             </t>
@@ -426,11 +429,36 @@
                                 },
                                 "modal": {
                                     "ondismiss": function(){
-                                        console.log('Checkout modal closed by user');
+                                        window.location.href = "/my/student/fees?payment_error=cancelled";
                                     }
                                 }
                             };
                             var rzp1 = new Razorpay(options);
+                            
+                            // Log payment failures in the background
+                            rzp1.on('payment.failed', function (response){
+                                fetch('/my/student/fees/pay/failed/' + "<t t-esc='fee.id'/>", {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                        jsonrpc: '2.0',
+                                        method: 'call',
+                                        params: {
+                                            error_code: response.error.code,
+                                            error_description: response.error.description,
+                                            error_source: response.error.source,
+                                            error_step: response.error.step,
+                                            error_reason: response.error.reason,
+                                            razorpay_payment_id: response.error.metadata.payment_id,
+                                            razorpay_order_id: response.error.metadata.order_id
+                                        }
+                                    })
+                                }).catch(function(err) {
+                                    console.log('Failed to log payment failure:', err);
+                                });
+                            });
                             
                             // Auto open checkout on page load
                             rzp1.open();

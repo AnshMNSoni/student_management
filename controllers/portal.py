@@ -6,6 +6,7 @@ import requests
 import base64
 import hmac
 import hashlib
+import pdb;
 
 
 class Website(Website):
@@ -149,11 +150,11 @@ class CustomerPortal(CustomerPortal):
         values = super()._prepare_home_portal_values(counters)
         partner = request.env.user.partner_id
         student = request.env['student.management'].sudo().search([('partner_id', '=', partner.id)], limit=1)
-        
+        pdb.set_trace()
+
         # Only inject the non-counter QWeb rendering variable if this is not a counters JSON-RPC call
         if request.httprequest.path != '/my/counters':
             values['is_student'] = bool(student)
-            
         if student:
             if 'student_count' in counters:
                 values['student_count'] = 1
@@ -239,6 +240,7 @@ class CustomerPortal(CustomerPortal):
 
     @http.route('/my/student/fees/pay/<int:fee_id>', type='http', auth='user', website=True)
     def portal_pay_fee(self, fee_id, **kw):
+        pdb.set_trace()
         partner = request.env.user.partner_id
         student = request.env['student.management'].sudo().search([('partner_id', '=', partner.id)], limit=1)
         if not student:
@@ -298,6 +300,7 @@ class CustomerPortal(CustomerPortal):
                 json=data,
                 timeout=10
             )
+            pdb.set_trace()
             if response.status_code == 200:
                 rzp_order = response.json()
                 rzp_order_id = rzp_order.get('id')
@@ -324,6 +327,7 @@ class CustomerPortal(CustomerPortal):
 
     @http.route('/my/student/fees/pay/callback/<int:fee_id>', type='http', auth='user', methods=['POST'], website=True, csrf=True)
     def portal_pay_fee_callback(self, fee_id, **post):
+        pdb.set_trace()
         partner = request.env.user.partner_id
         student = request.env['student.management'].sudo().search([('partner_id', '=', partner.id)], limit=1)
         if not student:
@@ -373,4 +377,39 @@ class CustomerPortal(CustomerPortal):
             return request.redirect('/my/student/fees?payment_success=1')
         else:
             return request.redirect('/my/student/fees?payment_error=invalid_signature')
+
+    @http.route('/my/student/fees/pay/failed/<int:fee_id>', type='json', auth='user', methods=['POST'], website=True)
+    def portal_pay_fee_failed(self, fee_id, **post):
+        partner = request.env.user.partner_id
+        student = request.env['student.management'].sudo().search([('partner_id', '=', partner.id)], limit=1)
+        if not student:
+            return {'status': 'error', 'message': 'Student not found'}
+
+        fee = request.env['student.fees'].sudo().search([
+            ('id', '=', fee_id),
+            ('student_id', '=', student.id)
+        ], limit=1)
+        
+        if not fee:
+            return {'status': 'error', 'message': 'Fee record not found'}
+
+        # Post a notification in student record chatter
+        error_code = post.get('error_code') or 'N/A'
+        error_description = post.get('error_description') or 'N/A'
+        error_reason = post.get('error_reason') or 'N/A'
+        payment_id = post.get('razorpay_payment_id') or 'N/A'
+        order_id = post.get('razorpay_order_id') or 'N/A'
+
+        student.message_post(
+            body=f"Payment attempt failed for '{fee.description}' via Razorpay.<br/>"
+                 f"<b>Error Details:</b><br/>"
+                 f"• Error Description: {error_description}<br/>"
+                 f"• Error Code: {error_code}<br/>"
+                 f"• Error Reason: {error_reason}<br/>"
+                 f"• Payment ID: {payment_id}<br/>"
+                 f"• Order ID: {order_id}",
+            subtype_xmlid="mail.mt_note"
+        )
+        return {'status': 'success'}
+
 
