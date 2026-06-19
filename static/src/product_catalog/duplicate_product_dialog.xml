@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+  <t t-name="student_management.DuplicateProductDialog">
+    <Dialog size="'md'" title="props.title" modalRef="modalRef">
+      <div class="p-4 text-center">
+        <div class="mb-3">
+          <i class="oi oi-warning text-warning" style="font-size: 3rem;"/>
+        </div>
+        <h4 class="mb-2 font-weight-bold">Duplicate Product Warning</h4>
+        <p class="text-muted">
+          The product <strong><t t-esc="props.productName"/></strong> already exists in this quotation.
+        </p>
+        <p class="text-muted">
+          You have selected an additional quantity of <strong><t t-esc="props.qtyAdded"/></strong> in the catalog. How would you like to apply this change?
+        </p>
+      </div>
+      <t t-set-slot="footer">
+        <button class="btn btn-primary px-3 mr-2" t-on-click="_updateExisting">
+          Update Existing Quantity
+        </button>
+        <button class="btn btn-success px-3 mr-2" t-on-click="_addAsNewLine">
+          Add as New Line
+        </button>
+        <button class="btn btn-secondary px-3" t-on-click="_cancel">
+          Cancel
+        </button>
+      </t>
+    </Dialog>
+  </t>
+</templates>
