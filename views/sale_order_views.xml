@@ -10,9 +10,9 @@
                 <field name="package_id" string="Package" options="{'no_create': True}"/>
             </xpath>
 
-            <!-- Dynamically hide list control buttons once package_id is selected -->
+            <!-- Permanently hide standard 'Add a product' link -->
             <xpath expr="//field[@name='order_line']/list/control/create[@name='add_product_control']" position="attributes">
-                <attribute name="invisible">parent.package_id</attribute>
+                <attribute name="invisible">True</attribute>
             </xpath>
             <xpath expr="//field[@name='order_line']/list/control/create[@name='add_section_control']" position="attributes">
                 <attribute name="invisible">parent.package_id</attribute>
@@ -24,9 +24,9 @@
                 <attribute name="invisible">parent.package_id</attribute>
             </xpath>
 
-            <!-- Dynamically hide kanban control buttons (mobile layout) once package_id is selected -->
+            <!-- Permanently hide standard 'Add a product' link on kanban (mobile) -->
             <xpath expr="//field[@name='order_line']/kanban/control/create[@name='add_product_control']" position="attributes">
-                <attribute name="invisible">parent.package_id</attribute>
+                <attribute name="invisible">True</attribute>
             </xpath>
             <xpath expr="//field[@name='order_line']/kanban/control/create[@name='add_section_control']" position="attributes">
                 <attribute name="invisible">parent.package_id</attribute>

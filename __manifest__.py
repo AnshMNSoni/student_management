@@ -23,6 +23,13 @@
         'views/student_portal_templates.xml',
         'views/student_registration_templates.xml',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'student_management/static/src/product_catalog/duplicate_product_dialog.js',
+            'student_management/static/src/product_catalog/duplicate_product_dialog.xml',
+            'student_management/static/src/product_catalog/kanban_controller.js',
+        ],
+    },
     'installable': True,
     'application': True,
 }
