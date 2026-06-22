@@ -6,7 +6,12 @@
         <div class="p-4">
           <h4 class="mb-2 font-weight-bold text-center">Select Quotation Line</h4>
           <p class="text-muted text-center mb-4">
-            Please select which existing quotation line for <strong><t t-esc="props.productName"/></strong> you would like to update with the additional quantity of <strong><t t-esc="props.qtyAdded"/></strong>:
+            <t t-if="props.isDecrease">
+              Please select which existing quotation line for <strong><t t-esc="props.productName"/></strong> you would like to decrease by <strong><t t-esc="props.qtyAdded"/></strong>:
+            </t>
+            <t t-else="">
+              Please select which existing quotation line for <strong><t t-esc="props.productName"/></strong> you would like to update with the additional quantity of <strong><t t-esc="props.qtyAdded"/></strong>:
+            </t>
           </p>
           <div class="list-group">
             <t t-foreach="props.lines" t-as="line" t-key="line.id">
