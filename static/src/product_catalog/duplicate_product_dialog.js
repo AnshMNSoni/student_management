@@ -1,7 +1,7 @@
 /** @odoo-module **/
 
 import { Dialog } from "@web/core/dialog/dialog";
-import { Component } from "@odoo/owl";
+import { Component, useState } from "@odoo/owl";
 import { useChildRef } from "@web/core/utils/hooks";
 import { _t } from "@web/core/l10n/translation";
 
@@ -12,6 +12,7 @@ export class DuplicateProductDialog extends Component {
         close: Function,
         productName: String,
         qtyAdded: Number,
+        lines: Array,
         onUpdateExisting: Function,
         onAddAsNewLine: Function,
         onCancel: Function,
@@ -24,11 +25,19 @@ export class DuplicateProductDialog extends Component {
     setup() {
         this.modalRef = useChildRef();
         this.env.dialogData.dismiss = () => this._cancel();
+        this.state = useState({
+            selectedLineId: this.props.lines && this.props.lines.length > 0 ? this.props.lines[0].id : null,
+            showLinePicker: false,
+        });
     }
 
     async _updateExisting() {
+        if (this.props.lines && this.props.lines.length > 1 && !this.state.showLinePicker) {
+            this.state.showLinePicker = true;
+            return;
+        }
         if (this.props.onUpdateExisting) {
-            await this.props.onUpdateExisting();
+            await this.props.onUpdateExisting(this.state.selectedLineId);
         }
         this.props.close();
     }
@@ -45,5 +54,9 @@ export class DuplicateProductDialog extends Component {
             await this.props.onCancel();
         }
         this.props.close();
+    }
+
+    _goBack() {
+        this.state.showLinePicker = false;
     }
 }

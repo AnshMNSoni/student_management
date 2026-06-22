@@ -92,6 +92,90 @@ class SaleOrder(models.Model):
             # Revert the existing line to its original quantity
             line.product_uom_qty = orig_qty
 
+    def get_product_lines_info(self, product_id):
+        self.ensure_one()
+        lines = self.order_line.filtered(
+            lambda l: not l.display_type and l.product_id.id == product_id
+        )
+        lines_data = []
+        for line in lines:
+            section_name = ""
+            parent_section = line.get_parent_section_line()
+            if parent_section:
+                section_name = parent_section.name or ""
+            
+            lines_data.append({
+                'id': line.id,
+                'description': line.name or line.product_id.display_name,
+                'quantity': line.product_uom_qty,
+                'price_unit': line.price_unit,
+                'section_name': section_name,
+            })
+        return lines_data
+
+    def apply_catalog_duplicate_choice_custom(self, product_id, line_id, choice, new_qty, initial_qty):
+        self.ensure_one()
+        added_qty = new_qty - initial_qty
+        if added_qty <= 0:
+            return self.pricelist_id._get_product_price(
+                product=self.env['product.product'].browse(product_id),
+                quantity=1.0,
+                currency=self.currency_id,
+                date=self.date_order,
+            )
+
+        line = self.env['sale.order.line'].browse(int(line_id) if line_id else False)
+        if not line.exists():
+            return 0.0
+
+        if choice == 'update_existing':
+            line.product_uom_qty += added_qty
+        elif choice == 'add_new':
+            self.env['sale.order.line'].create({
+                'order_id': self.id,
+                'product_id': product_id,
+                'product_uom_qty': added_qty,
+                'sequence': line.sequence + 1,
+            })
+
+        price_unit = self.pricelist_id._get_product_price(
+            product=line.product_id,
+            quantity=1.0,
+            currency=self.currency_id,
+            date=self.date_order,
+        )
+        return price_unit
+
+    def apply_catalog_decrease_choice_custom(self, product_id, line_id, decrease_qty):
+        self.ensure_one()
+        if decrease_qty <= 0:
+            return self.pricelist_id._get_product_price(
+                product=self.env['product.product'].browse(product_id),
+                quantity=1.0,
+                currency=self.currency_id,
+                date=self.date_order,
+            )
+
+        line = self.env['sale.order.line'].browse(int(line_id) if line_id else False)
+        if not line.exists():
+            return 0.0
+
+        if line.product_uom_qty > decrease_qty:
+            line.product_uom_qty -= decrease_qty
+        else:
+            if self.state in ['draft', 'sent']:
+                line.unlink()
+            else:
+                line.product_uom_qty = 0
+
+        price_unit = self.pricelist_id._get_product_price(
+            product=self.env['product.product'].browse(product_id),
+            quantity=1.0,
+            currency=self.currency_id,
+            date=self.date_order,
+        )
+        return price_unit
+
     def _update_order_line_info(self, product_id, quantity, **kwargs):
         self.ensure_one()
         section_id = kwargs.get('section_id', False)

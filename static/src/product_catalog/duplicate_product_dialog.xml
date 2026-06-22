@@ -2,28 +2,68 @@
 <templates xml:space="preserve">
   <t t-name="student_management.DuplicateProductDialog">
     <Dialog size="'md'" title="props.title" modalRef="modalRef">
-      <div class="p-4 text-center">
-        <div class="mb-3">
-          <i class="oi oi-warning text-warning" style="font-size: 3rem;"/>
+      <t t-if="state.showLinePicker">
+        <div class="p-4">
+          <h4 class="mb-2 font-weight-bold text-center">Select Quotation Line</h4>
+          <p class="text-muted text-center mb-4">
+            Please select which existing quotation line for <strong><t t-esc="props.productName"/></strong> you would like to update with the additional quantity of <strong><t t-esc="props.qtyAdded"/></strong>:
+          </p>
+          <div class="list-group">
+            <t t-foreach="props.lines" t-as="line" t-key="line.id">
+              <label class="list-group-item d-flex align-items-center cursor-pointer py-3 border rounded-3 mb-2 shadow-sm position-relative">
+                <div class="me-3 d-flex align-items-center">
+                  <input type="radio" name="selectedLine" t-att-value="line.id" t-model="state.selectedLineId" class="form-check-input" style="width: 1.25rem; height: 1.25rem; cursor: pointer;"/>
+                </div>
+                <div class="flex-grow-1">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="font-weight-bold text-dark"><t t-esc="line.description"/></span>
+                    <span class="badge bg-primary rounded-pill"><t t-esc="line.quantity"/> Units</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center mt-2 text-muted" style="font-size: 0.85rem;">
+                    <span t-if="line.section_name"><i class="oi oi-view-list me-1"/> Section: <strong><t t-esc="line.section_name"/></strong></span>
+                    <span t-else="" class="text-muted fst-italic">No Section</span>
+                    <span>Price: <strong class="text-success">$<t t-esc="line.price_unit"/></strong></span>
+                  </div>
+                </div>
+              </label>
+            </t>
+          </div>
         </div>
-        <h4 class="mb-2 font-weight-bold">Duplicate Product Warning</h4>
-        <p class="text-muted">
-          The product <strong><t t-esc="props.productName"/></strong> already exists in this quotation.
-        </p>
-        <p class="text-muted">
-          You have selected an additional quantity of <strong><t t-esc="props.qtyAdded"/></strong> in the catalog. How would you like to apply this change?
-        </p>
-      </div>
+      </t>
+      <t t-else="">
+        <div class="p-4 text-center">
+          <div class="mb-3">
+            <i class="oi oi-warning text-warning" style="font-size: 3rem;"/>
+          </div>
+          <h4 class="mb-2 font-weight-bold">Duplicate Product Warning</h4>
+          <p class="text-muted">
+            The product <strong><t t-esc="props.productName"/></strong> already exists in this quotation.
+          </p>
+          <p class="text-muted">
+            You have selected an additional quantity of <strong><t t-esc="props.qtyAdded"/></strong> in the catalog. How would you like to apply this change?
+          </p>
+        </div>
+      </t>
       <t t-set-slot="footer">
-        <button class="btn btn-primary px-3 mr-2" t-on-click="_updateExisting">
-          Update Existing Quantity
-        </button>
-        <button class="btn btn-success px-3 mr-2" t-on-click="_addAsNewLine">
-          Add as New Line
-        </button>
-        <button class="btn btn-secondary px-3" t-on-click="_cancel">
-          Cancel
-        </button>
+        <t t-if="state.showLinePicker">
+          <button class="btn btn-primary px-3 mr-2" t-on-click="_updateExisting">
+            Confirm Update
+          </button>
+          <button class="btn btn-secondary px-3" t-on-click="_goBack">
+            Back
+          </button>
+        </t>
+        <t t-else="">
+          <button class="btn btn-primary px-3 mr-2" t-on-click="_updateExisting">
+            Update Existing Quantity
+          </button>
+          <button class="btn btn-success px-3 mr-2" t-on-click="_addAsNewLine">
+            Add as New Line
+          </button>
+          <button class="btn btn-secondary px-3" t-on-click="_cancel">
+            Cancel
+          </button>
+        </t>
       </t>
     </Dialog>
   </t>

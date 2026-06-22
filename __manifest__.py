@@ -28,6 +28,7 @@
             'student_management/static/src/product_catalog/duplicate_product_dialog.js',
             'student_management/static/src/product_catalog/duplicate_product_dialog.xml',
             'student_management/static/src/product_catalog/kanban_controller.js',
+            'student_management/static/src/product_catalog/kanban_record.js',
         ],
     },
     'installable': True,
