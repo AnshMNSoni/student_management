@@ -7,6 +7,16 @@
         <field name="model">student.management</field>
         <field name="arch" type="xml">
             <list string="Students" default_order="name asc">
+                <button name="action_open_status_wizard_inactive"
+                        string="Inactive"
+                        type="object"
+                        class="btn-secondary"
+                        invisible="status != 'draft'"/>
+                <button name="action_open_status_wizard_active"
+                        string="Active"
+                        type="object"
+                        class="btn-primary"
+                        invisible="status != 'inactive'"/>
                 <field name="name" />
                 <field name="company_id" groups="base.group_multi_company" optional="show"/>
                 <field name="roll_number" />
@@ -37,6 +47,7 @@
                         type="object"
                         class="btn-primary"
                         groups="student_management.group_admin" />
+                    <field name="status" widget="statusbar" statusbar_visible="draft,inactive,active"/>
                 </header>
                 
                 <sheet>
@@ -64,7 +75,6 @@
                             <field name="subject_ids" widget="many2many_tags" domain="[('standard_name', '=', standard), '|', ('company_id', '=', False), ('company_id', '=', company_id)]" options="{'no_create': True}"/>
                             <field name="admission_date" />
                             <field name="fee_payment_deadline" />
-                            <field name="status" widget="badge" />
                             <field name="fee_status" widget="badge" decoration-success="fee_status == 'paid'" decoration-warning="fee_status == 'unpaid'" decoration-info="fee_status == 'no_fees'"/>
                         </group>
                     </group>

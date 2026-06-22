@@ -14,8 +14,8 @@ class StudentStatusWizard(models.TransientModel):
 
     new_status = fields.Selection([
         ('draft', 'Draft'),
-        ('active', 'Active'),
-        ('inactive', 'Inactive')
+        ('inactive', 'Inactive'),
+        ('active', 'Active')
     ], string="New Status", required=True)
 
     reason = fields.Text(string="Reason")

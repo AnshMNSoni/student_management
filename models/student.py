@@ -110,8 +110,8 @@ class Student(models.Model):
     status = fields.Selection(
         [
             ('draft', 'Draft'),
-            ('active', 'Active'),
-            ('inactive', 'Inactive')
+            ('inactive', 'Inactive'),
+            ('active', 'Active')
         ],
         string='Status',
         default='draft',
@@ -192,7 +192,8 @@ class Student(models.Model):
         self.ensure_one()
         template = self.env.ref('student_management.email_template_student_registration', raise_if_not_found=False)
         if template:
-            template.sudo().send_mail(self.id, force_send=True)
+            # template.sudo().send_mail(self.id, force_send=True)
+            pass
 
 
     def action_open_status_wizard(self):
@@ -205,6 +206,34 @@ class Student(models.Model):
              'context': {
                 'default_student_id': self.id,
                 'default_new_status': self.status,
+            }
+        }
+
+    def action_open_status_wizard_inactive(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Change Status',
+            'res_model': 'student.status.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_student_id': self.id,
+                'default_new_status': 'inactive',
+            }
+        }
+
+    def action_open_status_wizard_active(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Change Status',
+            'res_model': 'student.status.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_student_id': self.id,
+                'default_new_status': 'active',
             }
         }
 
@@ -265,8 +294,8 @@ class Student(models.Model):
                         has_invoice_on_time = True
                         break
             if not has_invoice_on_time:
-                if template:
-                    template.sudo().with_company(student.company_id).send_mail(student.id, force_send=True)
+                # if template:
+                #     template.sudo().with_company(student.company_id).send_mail(student.id, force_send=True)
                 student.message_post(
                     body="Fee payment deadline missed. Email notification sent.",
                     subtype_xmlid="mail.mt_note"
