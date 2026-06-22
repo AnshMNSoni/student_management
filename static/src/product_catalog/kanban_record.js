@@ -63,7 +63,6 @@ patch(ProductCatalogKanbanRecord.prototype, {
                                     this.initialQuantity
                                 ]);
                                 this.productCatalogData.price = parseFloat(price);
-                                // Update local states
                                 this.productCatalogData.quantity = quantity;
                                 this.initialQuantity = quantity;
                                 this.render();
