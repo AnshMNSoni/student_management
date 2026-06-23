@@ -203,7 +203,7 @@ class Student(models.Model):
             'res_model': 'student.status.wizard',
             'view_mode': 'form',
             'target': 'new',
-             'context': {
+            'context': {
                 'default_student_id': self.id,
                 'default_new_status': self.status,
             }
