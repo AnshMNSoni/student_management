@@ -10,8 +10,10 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   odoo:
-    image: odoo:19
+    build: .
     container_name: odoo_app
+    stdin_open: true
+    tty: true
     depends_on:
       - db
     ports:
